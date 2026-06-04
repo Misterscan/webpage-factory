@@ -1,0 +1,32 @@
+{
+  "title": "Sesi Built-in Functions Reference",
+  "description": "A comprehensive guide to the core built-in functions, standard library modules, and system operations available in the Sesi programming language.",
+  "summary": "Sesi provides a robust set of built-in functions for I/O, type conversion, collection manipulation, file system interaction, networking, and system-level tasks. It supports structured error handling, module imports via a hierarchical resolution path, and includes specialized functions for workflow orchestration and tool definition.",
+  "code_examples": [
+    {
+      "description": "Basic I/O and type conversion",
+      "code": "print \"Value:\", 10 + 20\nlet val = num(\"42\")\nlet is_valid = bool(1)"
+    },
+    {
+      "description": "File system and JSON operations",
+      "code": "let data = read_file(\"config.json\")\nlet obj = from_json(data)\nwrite_file(\"output.txt\", to_json(obj))"
+    },
+    {
+      "description": "Workflow and tool definition",
+      "code": "define_tool(\"summarizer\", fn(t) { return \"Summary: \" + t }, \"Summarizes text\")\nlet result = workflow([{\"prompt\": \"Summarize:\"}], \"Input text\")"
+    },
+    {
+      "description": "Module importing",
+      "code": "import { PI, sqrt } from \"std/math\"\nimport { sleep } from \"std/time\""
+    }
+  ],
+  "key_rules": [
+    "Paths for file system functions are resolved relative to the current working directory.",
+    "The `workflow` function automatically chains step outputs as input for subsequent steps.",
+    "Module resolution follows a strict priority: Script directory > Current working directory > SESI_PATH > ~/.sesi/lib.",
+    "Structured error handling is performed via `try/catch` blocks; `raise_error` terminates execution.",
+    "Collection functions like `push` modify arrays in-place.",
+    "Standard library modules (v1.3+) must be imported using the `import { ... } from \"std/...\"` syntax.",
+    "Functions like `num`, `len`, `keys`, and `values` return `null` upon failure or invalid input."
+  ]
+}

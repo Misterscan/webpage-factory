@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env.keys
+.sesi_cache.json
+.sesi_chat_history.json
+.env
+index.html
+help_response.md
+.ai-ignore/query.txt
+.ai-ignore/help_context.txt

@@ -1,0 +1,28 @@
+{
+  "title": "Sesi Language Specification (v1.3)",
+  "description": "A concise, legible, and practical programming language designed for frictionless script development, process orchestration, and integration with external models.",
+  "summary": "Sesi is a minimal, buildable language featuring a clean syntax and a robust module system. It emphasizes transparency and practicality with built-in support for process spawning, file system operations, and cross-platform library management.",
+  "code_examples": [
+    {
+      "description": "Basic variable declaration and arithmetic",
+      "code": "let x = 10\nlet y = 20\nprint x + y"
+    },
+    {
+      "description": "Function declaration with type annotations",
+      "code": "fn add(a: number, b: number) {print a + b}"
+    },
+    {
+      "description": "Module import and usage",
+      "code": "import {add} from \"math\"\nlet result = add(10, 20)"
+    }
+  ],
+  "key_rules": [
+    "Execution is strictly blocking; concurrency is handled via spawn().",
+    "Variables are declared using 'let'; functions use 'fn'.",
+    "Module resolution follows a strict priority: Script directory -> Working directory -> SESI_PATH -> ~/.sesi/lib.",
+    "Structured output requires a schema definition and provides type-safe access to returned fields.",
+    "Null propagation: Operations on null return null without throwing exceptions.",
+    "Lexical scoping applies; inner scopes shadow outer scopes.",
+    "Requires Node.js 18+."
+  ]
+}

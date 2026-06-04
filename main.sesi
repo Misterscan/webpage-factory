@@ -1,0 +1,61 @@
+// main.sesi - Starter Sesi script
+import {compile_bento_grid, compile_accordion} from "exports/site-builder"
+
+// In Sesi, we use prompt blocks for string templating
+prompt welcome {"Welcome to your self-contained Sesi project!"}
+print welcome
+
+// Let's create a responsive bento grid and an accordion
+let bentoItems = [
+    {"title": "System Status", "meta": "Active", "body": "All services are running within normal parameters.", "badge": "Stable"},
+    {"title": "Network Traffic", "meta": "1.2 GB/s", "body": "Incoming data throughput is peaking.", "badge": "High Load"}
+]
+
+let accordionItems = [
+    {"title": "How it works", "content": "Sesi compiles your logic into static HTML and CSS."},
+    {"title": "Zero JS", "content": "The generated components use CSS-only state management."}
+]
+
+let gridHtml = compile_bento_grid(bentoItems)
+let accordionHtml = compile_accordion(accordionItems)
+
+// Try running a complex webpage with prompt blocks
+print "Generating complex webpage..."
+let formattedTime = exec('node -e "process.stdout.write(new Date().toLocaleString())"')
+
+prompt complexWebpage { '<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webpage Factory Demo Page</title>
+    <style>
+      body { font-family: sans-serif; padding: 20px; background: #0a0a0c; color: #eee; }
+      .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
+      .grid-item { background: #1a1a20; padding: 20px; border: 1px solid #333; }
+      .accordion-group { margin-top: 20px; }
+      details { background: #1a1a20; margin-bottom: 10px; border: 1px solid #333; }
+      summary { padding: 15px; cursor: pointer; font-weight: bold; }
+      .accordion-content { padding: 15px; border-top: 1px solid #333; }
+    </style>
+  </head>
+  <body>
+    <h1>Webpage Factory is Running!</h1>
+    <p>This page was generated using Webpage Factory.</p>
+    <p>Current Time: ' formattedTime '</p>
+    
+    <h2>Bento Grid Layout</h2>
+    ' gridHtml '
+    
+    <h2>Interactive Accordions</h2>
+    ' accordionHtml '
+  </body>
+</html>'}
+
+print "✓ Generated. View your demo html at: index.html"
+try {
+  write_file("index.html", complexWebpage)
+} catch (err) {
+  print "✗ Failed to write index.html:" err
+}
+

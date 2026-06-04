@@ -1,0 +1,22 @@
+{
+  "title": "Programmatic Markdown-to-HTML Compiler",
+  "description": "A high-performance markdown parser and layout engine that uses string segmentation instead of regex to convert markdown files into styled HTML.",
+  "summary": "This module provides a comprehensive suite of tools for parsing markdown syntax, including inline formatting like bold, italics, links, and code spans, as well as block-level elements such as tables, blockquotes, task lists, and footnotes. It features a modular design with both original and extended parsing functions, allowing for flexible compilation of individual files or entire directories. The engine includes built-in styling for generated HTML elements and supports advanced features like Mermaid diagram blocks and footnote collection. It is designed for efficiency, avoiding heavy regex engines in favor of custom string-splitting logic.",
+  "code_examples": [
+    {
+      "description": "Compile a single markdown file using the full-featured parser.",
+      "code": "compile_markdown_file_full(\"input.md\", \"output.html\", \"My Document\")"
+    },
+    {
+      "description": "Batch compile all markdown files within a specific directory.",
+      "code": "compile_markdown_dir(\"./docs\", \"./dist\")"
+    }
+  ],
+  "key_rules": [
+    "The parser uses custom string segmentation logic rather than standard regular expressions for performance.",
+    "Inline formatting like bold and italics must be balanced within the same line to be parsed correctly.",
+    "Table parsing requires a header row followed by a separator row of dashes to trigger the table compilation logic.",
+    "Footnote definitions must follow the '[^key]: text' format to be correctly extracted by the collector.",
+    "The compiler automatically handles block-level state transitions (e.g., closing open lists or tables) when encountering new block types or code markers."
+  ]
+}

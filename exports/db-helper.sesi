@@ -1,0 +1,416 @@
+// db-helper.sesi
+// A lightweight, zero-dependency local flat-file JSON database for Sesi.
+// Enables persistent stateful storage, records querying, paginations, and collection counts.
+
+import {parse} from "std/json"
+
+// Initializes a database flat file if it doesn't already exist
+export fn init_db(dbPath: string) {
+  let file_exists = true
+  try {
+    let raw = read_file(dbPath)
+  } catch (err) {
+    file_exists = false
+  }
+  
+  if file_exists == false {
+    let empty_db = {"collections": {}}
+    let write_ok = true
+    try {
+      write_file(dbPath, to_json(empty_db))
+    } catch (err) {
+      write_ok = false
+    }
+    if write_ok {
+      print "✓ Initialized empty flat-file database at:" dbPath
+    } else {
+      print "✗ Failed to initialize database at:" dbPath
+      return false
+    }
+  }
+  return true
+}
+
+// Reads the raw database object
+export fn read_db(dbPath: string) {
+  init_db(dbPath)
+  let raw = ""
+  try {
+    raw = read_file(dbPath)
+  } catch (err) {
+    print "✗ Failed to read database at:" dbPath
+  }
+  return parse(raw)
+}
+
+// Writes the database object back to disk
+export fn write_db(dbPath: string, dbObject: object) {
+  let write_ok = true
+  try {
+    write_file(dbPath, to_json(dbObject))
+  } catch (err) {
+    write_ok = false
+    print "✗ Failed to write database at:" dbPath
+  }
+  return write_ok
+}
+
+// Inserts a new record into a collection, generating a unique ID
+export fn insert_record(dbPath: string, collection: string, record: object) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  
+  if cols[collection] == null {
+    cols[collection] = []
+  }
+  
+  let records_list = cols[collection]
+  
+  // Generate a unique ID using time and random built-ins
+  let record_id = str(time()) + "_" + str(random())
+  record["id"] = record_id
+  
+  push(records_list, record)
+  cols[collection] = records_list
+  db["collections"] = cols
+  
+  write_db(dbPath, db)
+  return record
+}
+
+// Finds all records in a collection that match a key-value filter
+export fn find_records(dbPath: string, collection: string, filterKey: string, filterVal: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  
+  if cols[collection] == null {
+    return []
+  }
+  
+  let all_records = cols[collection]
+  let matched_records = []
+  
+  for record in all_records {
+    if filterKey == "" {
+      push(matched_records, record)
+    } else {
+      if record[filterKey] == filterVal {
+        push(matched_records, record)
+      }
+    }
+  }
+  return matched_records
+}
+
+// Finds records with pagination (limit and offset) and filtering support
+export fn find_records_paginated(dbPath: string, collection: string, filterKey: string, filterVal: string, limit: number, offset: number) {
+  let matched = find_records(dbPath, collection, filterKey, filterVal)
+  let paginated = []
+  
+  let idx = offset
+  let count = 0
+  while idx < len(matched) {
+    if count < limit {
+      push(paginated, matched[idx])
+      count = count + 1
+    }
+    idx = idx + 1
+  }
+  return paginated
+}
+
+// Returns the total number of records in a collection
+export fn count_records(dbPath: string, collection: string) -> number {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  
+  if cols[collection] == null {
+    return 0
+  }
+  return len(cols[collection])
+}
+
+// Updates an existing record by its unique ID
+export fn update_record(dbPath: string, collection: string, id: string, updatedFields: object) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  
+  if cols[collection] == null {
+    return false
+  }
+  
+  let records_list = cols[collection]
+  let updated_list = []
+  let found = false
+  
+  for record in records_list {
+    if record["id"] == id {
+      // Merge updated fields
+      let keys_list = keys(updatedFields)
+      for k in keys_list {
+        record[k] = updatedFields[k]
+      }
+      found = true
+    }
+    push(updated_list, record)
+  }
+  
+  if found {
+    cols[collection] = updated_list
+    db["collections"] = cols
+    write_db(dbPath, db)
+  }
+  return found
+}
+
+// Deletes a record from a collection by its unique ID
+export fn delete_record(dbPath: string, collection: string, id: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  
+  if cols[collection] == null {
+    return false
+  }
+  
+  let records_list = cols[collection]
+  let updated_list = []
+  let deleted = false
+  
+  for record in records_list {
+    if record["id"] == id {
+      deleted = true
+    } else {
+      push(updated_list, record)
+    }
+  }
+  
+  if deleted {
+    cols[collection] = updated_list
+    db["collections"] = cols
+    write_db(dbPath, db)
+  }
+  return deleted
+}
+
+// ── Advanced Querying ─────────────────────────────────────────────────────────
+
+// Finds a single record by its unique ID; returns null if not found
+export fn find_record_by_id(dbPath: string, collection: string, id: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+
+  if cols[collection] == null {
+    return null
+  }
+
+  let all_records = cols[collection]
+  let found = null
+
+  for record in all_records {
+    if record["id"] == id {
+      found = record
+    }
+  }
+  return found
+}
+
+// Finds records matching ALL supplied key-value pairs (AND logic)
+// filters is an object e.g. {"status": "active", "type": "page"}
+export fn find_records_multi(dbPath: string, collection: string, filters: object) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+
+  if cols[collection] == null {
+    return []
+  }
+
+  let all_records = cols[collection]
+  let matched = []
+  let filter_keys = keys(filters)
+
+  for record in all_records {
+    let match = true
+    for k in filter_keys {
+      if record[k] != filters[k] {
+        match = false
+      }
+    }
+    if match {
+      push(matched, record)
+    }
+  }
+  return matched
+}
+
+// Deletes all records in a collection matching a key-value filter; returns deleted count
+export fn delete_records_where(dbPath: string, collection: string, filterKey: string, filterVal: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+
+  if cols[collection] == null {
+    return 0
+  }
+
+  let records_list = cols[collection]
+  let kept = []
+  let deleted_count = 0
+
+  for record in records_list {
+    if record[filterKey] == filterVal {
+      deleted_count = deleted_count + 1
+    } else {
+      push(kept, record)
+    }
+  }
+
+  if deleted_count > 0 {
+    cols[collection] = kept
+    db["collections"] = cols
+    write_db(dbPath, db)
+  }
+  return deleted_count
+}
+
+// Returns all records in a collection sorted by a string/number field (ascending)
+export fn sort_records_by(dbPath: string, collection: string, field: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+
+  if cols[collection] == null {
+    return []
+  }
+
+  let records = cols[collection]
+  let n = len(records)
+  let i = 0
+
+  while i < n {
+    let j = i + 1
+    while j < n {
+      let a = records[i][field]
+      let b = records[j][field]
+      if a > b {
+        let tmp = records[i]
+        records[i] = records[j]
+        records[j] = tmp
+      }
+      j = j + 1
+    }
+    i = i + 1
+  }
+  return records
+}
+
+// ── Collection Management ─────────────────────────────────────────────────────
+
+// Returns a list of all collection names in the database
+export fn list_collections(dbPath: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+  return keys(cols)
+}
+
+// Drops (permanently deletes) an entire collection; returns true if it existed
+export fn drop_collection(dbPath: string, collection: string) {
+  let db = read_db(dbPath)
+  let cols = db["collections"]
+
+  if cols[collection] == null {
+    return false
+  }
+
+  let new_cols = {}
+  let col_names = keys(cols)
+  for name in col_names {
+    if name != collection {
+      new_cols[name] = cols[name]
+    }
+  }
+
+  db["collections"] = new_cols
+  write_db(dbPath, db)
+  return true
+}
+
+// ── Backup & Restore ──────────────────────────────────────────────────────────
+
+// Creates a timestamped backup of the database file; returns the backup file path
+export fn backup_db(dbPath: string) {
+  let raw = ""
+  let read_ok = true
+  try {
+    raw = read_file(dbPath)
+  } catch (err) {
+    read_ok = false
+  }
+
+  if read_ok == false {
+    return null
+  }
+
+  let backup_path = dbPath + ".backup." + str(time())
+  let write_ok = true
+  try {
+    write_file(backup_path, raw)
+  } catch (err) {
+    write_ok = false
+  }
+
+  if write_ok == false {
+    return null
+  }
+
+  print "✓ Backup created at:" backup_path
+  return backup_path
+}
+
+// Restores a database from a backup file path; returns true on success
+export fn restore_db(dbPath: string, backupPath: string) {
+  let raw = ""
+  let read_ok = true
+  try {
+    raw = read_file(backupPath)
+  } catch (err) {
+    read_ok = false
+  }
+
+  if read_ok == false {
+    print "✗ Could not read backup:" backupPath
+    return false
+  }
+
+  let write_ok = true
+  try {
+    write_file(dbPath, raw)
+  } catch (err) {
+    write_ok = false
+  }
+
+  if write_ok == false {
+    print "✗ Could not write restored database to:" dbPath
+    return false
+  }
+
+  print "✓ Database restored from:" backupPath
+  return true
+}
+
+// ── Tool Definitions ──────────────────────────────────────────────────────────
+
+define_tool("init_db",              init_db,              "Initialize a flat-file JSON database at the given path; creates the file if it does not exist")
+define_tool("read_db",              read_db,              "Read and parse the full database object from disk")
+define_tool("write_db",             write_db,             "Write a database object back to disk as JSON")
+define_tool("insert_record",        insert_record,        "Insert a new record into a collection, auto-generating a unique ID")
+define_tool("find_records",         find_records,         "Find all records in a collection matching a single key-value filter (pass empty string to retrieve all)")
+define_tool("find_records_paginated", find_records_paginated, "Find records with pagination support (limit, offset) and optional key-value filter")
+define_tool("count_records",        count_records,        "Return the total number of records in a collection")
+define_tool("update_record",        update_record,        "Update an existing record by its unique ID with the provided fields")
+define_tool("delete_record",        delete_record,        "Delete a single record from a collection by its unique ID")
+define_tool("find_record_by_id",    find_record_by_id,    "Find a single record by its unique ID; returns null if not found")
+define_tool("find_records_multi",   find_records_multi,   "Find records matching ALL fields in a filters object (AND logic)")
+define_tool("delete_records_where", delete_records_where, "Bulk-delete all records matching a key-value filter; returns the count of deleted records")
+define_tool("sort_records_by",      sort_records_by,      "Return all records in a collection sorted ascending by a string or number field")
+define_tool("list_collections",     list_collections,     "Return an array of all collection names in the database")
+define_tool("drop_collection",      drop_collection,      "Permanently delete an entire collection; returns true if it existed")
+define_tool("backup_db",            backup_db,            "Create a timestamped backup copy of the database file; returns the backup file path")
+define_tool("restore_db",           restore_db,           "Restore a database from a backup file path; returns true on success")

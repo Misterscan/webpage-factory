@@ -1,0 +1,478 @@
+// data-analyzer.sesi
+// Dynamic CSV data parser and analytical aggregator.
+// Enables tabular spreadsheet processing, statistical operations, and collection sorting.
+
+// Parses CSV string content into an array of mapped JSON record objects
+export fn parse_csv(csvText: string) -> array {
+  let clean_text = csvText
+  let rows = split(clean_text, "\n")
+  let headers = split(rows[0], ",")
+  
+  // Clean header strings (trim spaces)
+  let clean_headers = []
+  for h in headers {
+    push(clean_headers, h)
+  }
+  
+  let records = []
+  let idx = 1
+  while idx < len(rows) {
+    let row = rows[idx]
+    if len(row) > 0 {
+      let cols = split(row, ",")
+      let record = {}
+      let h_idx = 0
+      while h_idx < len(clean_headers) {
+        if h_idx < len(cols) {
+          record[clean_headers[h_idx]] = cols[h_idx]
+        } else {
+          record[clean_headers[h_idx]] = ""
+        }
+        h_idx = h_idx + 1
+      }
+      push(records, record)
+    }
+    idx = idx + 1
+  }
+  return records
+}
+
+// Converts a list of record objects back into a standard formatted CSV string
+export fn export_to_csv(records: array, fieldsList: array) -> string {
+  let csv = ""
+  // Headers row
+  let idx = 0
+  while idx < len(fieldsList) {
+    csv = csv + fieldsList[idx]
+    if idx < len(fieldsList) - 1 {
+      csv = csv + ","
+    }
+    idx = idx + 1
+  }
+  csv = csv + "\n"
+  
+  // Records rows
+  for rec in records {
+    let f_idx = 0
+    while f_idx < len(fieldsList) {
+      let val = str(rec[fieldsList[f_idx]])
+      csv = csv + val
+      if f_idx < len(fieldsList) - 1 {
+        csv = csv + ","
+      }
+      f_idx = f_idx + 1
+    }
+    csv = csv + "\n"
+  }
+  return csv
+}
+
+// Computes the average value of a specific numerical field inside a records list
+export fn compute_average(records: array, key: string) -> number {
+  if len(records) == 0 {
+    return 0
+  }
+  let sum = 0.0
+  for rec in records {
+    sum = sum + (rec[key] - 0)
+  }
+  return sum / len(records)
+}
+
+// Computes the maximum value of a specific numerical field inside a records list
+export fn compute_max(records: array, key: string) -> number {
+  if len(records) == 0 {
+    return 0
+  }
+  let max_val = records[0][key] - 0
+  for rec in records {
+    let val = rec[key] - 0
+    if val > max_val {
+      max_val = val
+    }
+  }
+  return max_val
+}
+
+// Computes the minimum value of a specific numerical field inside a records list
+export fn compute_min(records: array, key: string) -> number {
+  if len(records) == 0 {
+    return 0
+  }
+  let min_val = records[0][key] - 0
+  for rec in records {
+    let val = rec[key] - 0
+    if val < min_val {
+      min_val = val
+    }
+  }
+  return min_val
+}
+
+// Programmatic Bubble Sort to sort record objects by a numerical key
+export fn sort_records(records: array, key: string, ascending) -> array {
+  let n = len(records)
+  let idx = 0
+  while idx < n {
+    let jdx = 0
+    while jdx < n - 1 {
+      let val1 = records[jdx][key] - 0
+      let val2 = records[jdx + 1][key] - 0
+      let swap = false
+      if ascending {
+        if val1 > val2 {
+          swap = true
+        }
+      } else {
+        if val1 < val2 {
+          swap = true
+        }
+      }
+      
+      if swap {
+        let temp = records[jdx]
+        records[jdx] = records[jdx + 1]
+        records[jdx + 1] = temp
+      }
+      jdx = jdx + 1
+    }
+    idx = idx + 1
+  }
+  return records
+}
+
+// Filters records matching a specific key-value criteria
+export fn filter_records(records: array, key: string, filterVal: string) -> array {
+  let filtered = []
+  for rec in records {
+    if str(rec[key]) == filterVal {
+      push(filtered, rec)
+    }
+  }
+  return filtered
+}
+
+// ── Private Helpers ───────────────────────────────────────────────────────────
+
+// Newton-Raphson square root (no sqrt builtin available)
+fn newton_sqrt(x: number) {
+  if x <= 0 {
+    return 0
+  }
+  let guess = x / 2
+  let iter = 0
+  while iter < 20 {
+    guess = (guess + x / guess) / 2
+    iter = iter + 1
+  }
+  return guess
+}
+
+// ── Advanced Analytics ────────────────────────────────────────────────────────
+
+// Computes the sum of a numerical field across all records
+export fn compute_sum(records: array, key: string) -> number {
+  let total = 0.0
+  for rec in records {
+    total = total + (rec[key] - 0)
+  }
+  return total
+}
+
+// Computes the median of a numerical field (middle value of sorted data)
+export fn compute_median(records: array, key: string) -> number {
+  let n = len(records)
+  if n == 0 {
+    return 0
+  }
+
+  // Extract numeric values
+  let vals = []
+  for rec in records {
+    push(vals, rec[key] - 0)
+  }
+
+  // Bubble sort ascending
+  let i = 0
+  while i < n {
+    let j = 0
+    while j < n - 1 {
+      if vals[j] > vals[j + 1] {
+        let tmp = vals[j]
+        vals[j] = vals[j + 1]
+        vals[j + 1] = tmp
+      }
+      j = j + 1
+    }
+    i = i + 1
+  }
+
+  // Determine even/odd length via pair-counting (avoids % operator)
+  let half = 0
+  let counter = 0
+  while counter + 2 <= n {
+    half = half + 1
+    counter = counter + 2
+  }
+  let is_even = counter == n
+
+  if is_even {
+    return (vals[half - 1] + vals[half]) / 2
+  }
+  return vals[half]
+}
+
+// Returns the most frequently occurring value of a field (as a string)
+export fn compute_mode(records: array, key: string) -> string {
+  let freq = {}
+  for rec in records {
+    let k = str(rec[key])
+    if freq[k] == null {
+      freq[k] = 0
+    }
+    freq[k] = freq[k] + 1
+  }
+
+  let best_key = ""
+  let best_count = 0
+  let ks = keys(freq)
+  for k in ks {
+    if freq[k] > best_count {
+      best_count = freq[k]
+      best_key = k
+    }
+  }
+  return best_key
+}
+
+// Computes the population standard deviation of a numerical field
+export fn compute_std_dev(records: array, key: string) -> number {
+  let n = len(records)
+  if n == 0 {
+    return 0
+  }
+  let sum = 0.0
+  for rec in records {
+    sum = sum + (rec[key] - 0)
+  }
+  let avg = sum / n
+  let variance_sum = 0.0
+  for rec in records {
+    let diff = (rec[key] - 0) - avg
+    variance_sum = variance_sum + (diff * diff)
+  }
+  return newton_sqrt(variance_sum / n)
+}
+
+// Groups records into an object keyed by the values of a specific field
+export fn group_by(records: array, key: string) -> object {
+  let groups = {}
+  for rec in records {
+    let gk = str(rec[key])
+    if groups[gk] == null {
+      groups[gk] = []
+    }
+    push(groups[gk], rec)
+  }
+  return groups
+}
+
+// Extracts a single field from every record into a flat array
+export fn pluck(records: array, key: string) -> array {
+  let out = []
+  for rec in records {
+    push(out, rec[key])
+  }
+  return out
+}
+
+// ── Data Validation ───────────────────────────────────────────────────────────
+
+// Validates that every record contains all required fields.
+// Returns an array of {index, missing} objects for each invalid record (empty array = all valid).
+export fn validate_records(records: array, requiredFields: array) -> array {
+  let invalid = []
+  let idx = 0
+  for rec in records {
+    let missing = []
+    for field in requiredFields {
+      if rec[field] == null {
+        push(missing, field)
+      }
+    }
+    if len(missing) > 0 {
+      let issue = {"index": idx, "missing": missing}
+      push(invalid, issue)
+    }
+    idx = idx + 1
+  }
+  return invalid
+}
+
+// Checks that a specific field's value across all records is a valid number.
+// Returns an array of indices where the field is not numeric (or missing).
+export fn validate_numeric_field(records: array, key: string) -> array {
+  let bad_indices = []
+  let idx = 0
+  for rec in records {
+    let val = rec[key]
+    let is_num = true
+    if val == null {
+      is_num = false
+    }
+    if is_num {
+      let coerced = val - 0
+      // NaN != NaN is always true — reliable NaN detection without sqrt/isNaN
+      if coerced != coerced {
+        is_num = false
+      }
+    }
+    if is_num == false {
+      push(bad_indices, idx)
+    }
+    idx = idx + 1
+  }
+  return bad_indices
+}
+
+// ── Conversion Utilities ──────────────────────────────────────────────────────
+
+// Serializes a records array to a JSON string
+export fn export_to_json(records: array) -> string {
+  return to_json(records)
+}
+
+// Exports records to an Excel-compatible XML Spreadsheet (SpreadsheetML 2003) string
+export fn export_to_excel_xml(records: array, fieldsList: array) -> string {
+  let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+  xml = xml + "<?mso-application progid=\"Excel.Sheet\"?>\n"
+  xml = xml + "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n"
+  xml = xml + "          xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n"
+  xml = xml + "          xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\n"
+  xml = xml + "          xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"\n"
+  xml = xml + "          xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n"
+  xml = xml + "  <Worksheet ss:Name=\"Sheet1\">\n"
+  xml = xml + "    <Table>\n"
+
+  // Header row
+  xml = xml + "      <Row>\n"
+  for f in fieldsList {
+    xml = xml + "        <Cell><Data ss:Type=\"String\">" + str(f) + "</Data></Cell>\n"
+  }
+  xml = xml + "      </Row>\n"
+
+  // Data rows
+  for rec in records {
+    xml = xml + "      <Row>\n"
+    for f in fieldsList {
+      let val = rec[f]
+      if val == null {
+        xml = xml + "        <Cell><Data ss:Type=\"String\"></Data></Cell>\n"
+      } else {
+        let num_val = val - 0
+        if num_val == num_val {
+          xml = xml + "        <Cell><Data ss:Type=\"Number\">" + str(num_val) + "</Data></Cell>\n"
+        } else {
+          xml = xml + "        <Cell><Data ss:Type=\"String\">" + str(val) + "</Data></Cell>\n"
+        }
+      }
+    }
+    xml = xml + "      </Row>\n"
+  }
+
+  xml = xml + "    </Table>\n"
+  xml = xml + "  </Worksheet>\n"
+  xml = xml + "</Workbook>\n"
+  return xml
+}
+
+// Exports records to a Microsoft Word-compatible XML document (WordprocessingML 2003) string containing a data table
+export fn export_to_word_xml(records: array, fieldsList: array) -> string {
+  let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+  xml = xml + "<?mso-application progid=\"Word.Document\"?>\n"
+  xml = xml + "<w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\">\n"
+  xml = xml + "  <w:body>\n"
+  xml = xml + "    <w:p>\n"
+  xml = xml + "      <w:r>\n"
+  xml = xml + "        <w:rPr>\n"
+  xml = xml + "          <w:sz w:val=\"28\"/>\n"
+  xml = xml + "          <w:b/>\n"
+  xml = xml + "        </w:rPr>\n"
+  xml = xml + "        <w:t>Exported Dataset</w:t>\n"
+  xml = xml + "      </w:r>\n"
+  xml = xml + "    </w:p>\n"
+
+  // Table structure
+  xml = xml + "    <w:tbl>\n"
+  xml = xml + "      <w:tblPr>\n"
+  xml = xml + "        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n"
+  xml = xml + "        <w:tblBorders>\n"
+  xml = xml + "          <w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "          <w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "          <w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "          <w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "          <w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "          <w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>\n"
+  xml = xml + "        </w:tblBorders>\n"
+  xml = xml + "      </w:tblPr>\n"
+
+  // Header row in table
+  xml = xml + "      <w:tr>\n"
+  for f in fieldsList {
+    xml = xml + "        <w:tc>\n"
+    xml = xml + "          <w:p>\n"
+    xml = xml + "            <w:r>\n"
+    xml = xml + "              <w:rPr><w:b/></w:rPr>\n"
+    xml = xml + "              <w:t>" + str(f) + "</w:t>\n"
+    xml = xml + "            </w:r>\n"
+    xml = xml + "          </w:p>\n"
+    xml = xml + "        </w:tc>\n"
+  }
+  xml = xml + "      </w:tr>\n"
+
+  // Data rows in table
+  for rec in records {
+    xml = xml + "      <w:tr>\n"
+    for f in fieldsList {
+      let val = rec[f]
+      let val_str = ""
+      if val != null {
+        val_str = str(val)
+      }
+      xml = xml + "        <w:tc>\n"
+      xml = xml + "          <w:p>\n"
+      xml = xml + "            <w:r>\n"
+      xml = xml + "              <w:t>" + val_str + "</w:t>\n"
+      xml = xml + "            </w:r>\n"
+      xml = xml + "          </w:p>\n"
+      xml = xml + "        </w:tc>\n"
+    }
+    xml = xml + "      </w:tr>\n"
+  }
+
+  xml = xml + "    </w:tbl>\n"
+  xml = xml + "  </w:body>\n"
+  xml = xml + "</w:wordDocument>\n"
+  return xml
+}
+
+// ── Tool Definitions ──────────────────────────────────────────────────────────
+
+define_tool("parse_csv",              parse_csv,              "Parse a CSV string into an array of mapped record objects using the first row as headers")
+define_tool("export_to_csv",          export_to_csv,          "Convert an array of record objects back to a CSV string given an ordered fields list")
+define_tool("export_to_json",         export_to_json,         "Serialize an array of record objects to a JSON string")
+define_tool("export_to_excel_xml",    export_to_excel_xml,    "Serialize records to an Excel-compatible XML Spreadsheet (SpreadsheetML 2003) string")
+define_tool("export_to_word_xml",     export_to_word_xml,     "Serialize records to a Microsoft Word-compatible XML document (WordprocessingML 2003) string containing a data table")
+define_tool("compute_average",        compute_average,        "Compute the mean of a numerical field across all records")
+define_tool("compute_sum",            compute_sum,            "Compute the total sum of a numerical field across all records")
+define_tool("compute_max",            compute_max,            "Find the maximum value of a numerical field across all records")
+define_tool("compute_min",            compute_min,            "Find the minimum value of a numerical field across all records")
+define_tool("compute_median",         compute_median,         "Compute the median of a numerical field (middle value of sorted data)")
+define_tool("compute_mode",           compute_mode,           "Return the most frequently occurring value of a field as a string")
+define_tool("compute_std_dev",        compute_std_dev,        "Compute the population standard deviation of a numerical field")
+define_tool("sort_records",           sort_records,           "Sort records by a numerical field ascending or descending (bubble sort)")
+define_tool("filter_records",         filter_records,         "Filter records to those where a field matches a specific string value")
+define_tool("group_by",               group_by,               "Group records into an object keyed by the distinct values of a field")
+define_tool("pluck",                  pluck,                  "Extract a single field from every record into a flat array")
+define_tool("validate_records",       validate_records,       "Check all records contain required fields; returns [{index, missing}] for invalid rows")
+define_tool("validate_numeric_field", validate_numeric_field, "Return indices of records where a field is missing or not numeric")

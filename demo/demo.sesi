@@ -1,0 +1,253 @@
+import {init_db, insert_record, find_records_multi, sort_records_by, list_collections, count_records, backup_db} from "exports/db-helper"
+import {parse_csv, export_to_csv, export_to_json, export_to_excel_xml, export_to_word_xml, compute_average, compute_sum, compute_max, compute_min, compute_median, compute_mode, compute_std_dev, group_by, validate_records, validate_numeric_field} from "exports/data-analyzer"
+import {compile_bar_chart, compile_sparkline, compile_gauge_indicator, compile_pie_chart, compile_donut_chart, compile_candlestick_chart, compile_treemap_chart} from "exports/visual-charts"
+import {generate_page, compile_nav_bar, compile_hero_banner, compile_keybind_bar, compile_accordion, compile_breadcrumb, compile_search_bar, compile_progress_bar, generate_seo_metadata} from "exports/site-builder"
+
+print "=== Webpage Factory Demo Build Started ==="
+// ── 1. Stateful Database Integration ──────────────────────────────────────────
+let db = "demo/dashboard_db.json"
+init_db(db)
+// Add metrics data logs to database if empty
+let entries_count = count_records(db, "logs")
+if entries_count == 0 {
+  print "Database logs empty. Populating telemetry metrics..."
+  insert_record(db, "logs", {"metric": "latency", "val": 120, "env": "production"})
+  insert_record(db, "logs", {"metric": "latency", "val": 350, "env": "staging"})
+  insert_record(db, "logs", {"metric": "latency", "val": 85, "env": "production"})
+  insert_record(db, "logs", {"metric": "cpu", "val": 45, "env": "production"})
+  insert_record(db, "logs", {"metric": "cpu", "val": 88, "env": "staging"})
+  insert_record(db, "logs", {"metric": "cpu", "val": 12, "env": "development"})
+  insert_record(db, "logs", {"metric": "memory", "val": 60, "env": "production"})
+  insert_record(db, "logs", {"metric": "memory", "val": 75, "env": "staging"})
+  insert_record(db, "logs", {"metric": "memory", "val": 40, "env": "development"})
+}
+// Query all logs and sort by numerical field "val"
+let all_logs = find_records_multi(db, "logs", {})
+let sorted_logs = sort_records_by(db, "logs", "val")
+let cols = list_collections(db)
+// Backup the database
+let db_backup = backup_db(db)
+// ── 2. Data Analytics Integration ─────────────────────────────────────────────
+// Raw performance CSV data (response times in ms, error rates in %)
+let raw_csv = "metric,value,env\nlatency,90,production\nlatency,320,staging\nlatency,110,production\nlatency,600,production\nlatency,80,development\nmemory,65,production\nmemory,82,staging\nmemory,45,development\ncpu,30,production\ncpu,92,staging\ncpu,15,development"
+let parsed_metrics = parse_csv(raw_csv)
+print "CSV Performance Records Parsed:" len(parsed_metrics)
+// Compute analytical metrics
+// We calculate stats on response times (latency) using our new analytical library
+let latency_records = []
+for m in parsed_metrics {
+  if m["metric"] == "latency" {
+    push(latency_records, m)
+  }
+}
+let avg_latency = compute_average(latency_records, "value")
+let sum_latency = compute_sum(latency_records, "value")
+let max_latency = compute_max(latency_records, "value")
+let min_latency = compute_min(latency_records, "value")
+let med_latency = compute_median(latency_records, "value")
+let mode_latency = compute_mode(latency_records, "value")
+let sd_latency = compute_std_dev(latency_records, "value")
+print "Latency Analytics Compiled:"
+print "  Average:" avg_latency "ms"
+print "  Sum:" sum_latency "ms"
+print "  Max:" max_latency "ms"
+print "  Min:" min_latency "ms"
+print "  Median:" med_latency "ms"
+print "  Mode:" mode_latency "ms"
+print "  Std Dev:" sd_latency
+// Run Group By env
+let grouped_by_env = group_by(parsed_metrics, "env")
+let env_keys = keys(grouped_by_env)
+// Perform schema and data validations
+let schema_violations = validate_records(parsed_metrics, ["metric", "value", "env"])
+let bad_numeric_indices = validate_numeric_field(parsed_metrics, "value")
+print "Telemetry Validation Results:"
+print "  Schema violations count:" len(schema_violations)
+print "  Bad numeric records count:" len(bad_numeric_indices)
+// Export data into multiple serialization formats
+let csv_export = export_to_csv(parsed_metrics, ["metric", "value", "env"])
+let json_export = export_to_json(parsed_metrics)
+let excel_export = export_to_excel_xml(parsed_metrics, ["metric", "value", "env"])
+let word_export = export_to_word_xml(parsed_metrics, ["metric", "value", "env"])
+// Write output export files to disk
+try {
+  write_file("demo/telemetry.csv", csv_export)
+  write_file("demo/telemetry.json", json_export)
+  write_file("demo/telemetry.xls", excel_export)
+  write_file("demo/telemetry.doc", word_export)
+} catch (err) {
+  print "✗ Failed to write exports to disk:" err
+}
+// ── 3. Visual Charts Rendering ────────────────────────────────────────────────
+// Bar Chart of environment metric counts
+let env_counts = []
+for k in env_keys {
+  let count = len(grouped_by_env[k])
+  push(env_counts, {"label": k, "value": count * 20}) // scaled to show nicely
+}
+let bar_chart_html = compile_bar_chart(env_counts, "Environments Density Index (scaled)")
+// Sparkline (Upgraded detailed Line Chart) of Latency values
+let sparkline_values = []
+for m in latency_records {
+  push(sparkline_values, m["value"] - 0)
+}
+let sparkline_html = compile_sparkline(sparkline_values, "Response Latency Trend (ms)")
+// Gauge Indicator showing CPU utilization
+let current_cpu_val = 67
+let gauge_html = compile_gauge_indicator(current_cpu_val, 0, 100, "Global Node Load Factor")
+// Pie Chart showing Env Allocation distribution
+let allocation_data = [
+  {"label": "Production", "value": 55},
+  {"label": "Staging", "value": 30},
+  {"label": "Development", "value": 15}
+]
+let pie_chart_html = compile_pie_chart(allocation_data, "Core Clusters Allocation (%)")
+// Candlestick Chart (Telemetry Interval Ranges)
+let candlestick_data = [
+  {"label": "09:00", "open": 100, "high": 250, "low": 80, "close": 120},
+  {"label": "10:00", "open": 120, "high": 380, "low": 110, "close": 350},
+  {"label": "11:00", "open": 350, "high": 600, "low": 200, "close": 280},
+  {"label": "12:00", "open": 280, "high": 310, "low": 90, "close": 105},
+  {"label": "13:00", "open": 105, "high": 180, "low": 70, "close": 85}
+]
+let candlestick_html = compile_candlestick_chart(candlestick_data, "Server Latency OHLC Spreads (ms)")
+// Treemap Chart (Storage usage distribution)
+let treemap_data = [
+  {"label": "Database Logs", "value": 450},
+  {"label": "Asset Cache", "value": 300},
+  {"label": "Exports Archive", "value": 180},
+  {"label": "Static Styles", "value": 120},
+  {"label": "System Backups", "value": 80}
+]
+let treemap_html = compile_treemap_chart(treemap_data, "Disk Storage Footprint (MB)")
+// ── 4. Dashboard Assembly (Using site-builder) ───────────────────────────────
+let nav_links = [
+  {"label": "Dashboard Home", "url": "#"},
+  {"label": "JSON Payload", "url": "telemetry.json"},
+  {"label": "CSV Metrics", "url": "telemetry.csv"},
+  {"label": "Excel Sheet", "url": "telemetry.xls"},
+  {"label": "Word Document", "url": "telemetry.doc"}
+]
+let nav_bar = compile_nav_bar("WEBPAGE FACTORY DASHBOARD DEMO", nav_links)
+let crumbs = [
+  {"label": "Systems", "url": "#"},
+  {"label": "Telemetry", "url": "#"},
+  {"label": "Dashboard", "url": "#"}
+]
+let breadcrumb_html = compile_breadcrumb(crumbs)
+let search_bar_html = compile_search_bar("bar-row", "Filter by node/environment...")
+// Construct main stats overview via Bento Grid items
+let bento_items = [
+  {
+    "title": "Database Overview",
+    "meta": "Flat-File Persistent Storage",
+    "body": "Active collections: <b>" + str(len(cols)) + "</b> (" + join(cols, ", ") + "). Total logged database records: <b>" + str(len(all_logs)) + "</b>.",
+    "badge": "Active Status"
+  },
+  {
+    "title": "Latency Stat summary",
+    "meta": "Standard Deviation & Median Metrics",
+    "body": "Calculated Mean: <b>" + str(avg_latency) + " ms</b>. Computed Median: <b>" + str(med_latency) + " ms</b>. Population Std Dev: <b>" + str(sd_latency) + "</b>.",
+    "badge": "Calculated telemetry"
+  },
+  {
+    "title": "System Integrity",
+    "meta": "Validation telemetry",
+    "body": "Records schema violations: <b>" + str(len(schema_violations)) + "</b>. Non-numeric parameter warnings: <b>" + str(len(bad_numeric_indices)) + "</b>.",
+    "badge": "100% Valid"
+  }
+]
+let bento_grid_html = ""
+bento_grid_html = bento_grid_html + "<div class='grid-container'>\n"
+for item in bento_items {
+  bento_grid_html = bento_grid_html + "  <div class='grid-item'>\n"
+  bento_grid_html = bento_grid_html + "    <div class='item-header'>\n"
+  bento_grid_html = bento_grid_html + "      <h3 class='item-title'>" + item["title"] + "</h3>\n"
+  bento_grid_html = bento_grid_html + "      <span class='item-meta'>" + item["meta"] + "</span>\n"
+  bento_grid_html = bento_grid_html + "    </div>\n"
+  bento_grid_html = bento_grid_html + "    <p class='item-body'>" + item["body"] + "</p>\n"
+  bento_grid_html = bento_grid_html + "    <span class='item-badge'>" + item["badge"] + "</span>\n"
+  bento_grid_html = bento_grid_html + "  </div>\n"
+}
+bento_grid_html = bento_grid_html + "</div>"
+// Compile table displaying database logs
+let log_headers = ["ID", "Metric Key", "Value", "Environment"]
+let log_rows = []
+for log in sorted_logs {
+  push(log_rows, [log["id"], log["metric"], str(log["val"]), log["env"]])
+}
+let table_html = ""
+table_html = table_html + "<div class='table-wrapper'>\n  <table class='data-table'>\n"
+table_html = table_html + "    <caption class='table-caption'>Active Database Logs (Sorted by Value Ascending)</caption>\n"
+table_html = table_html + "    <thead>\n      <tr>\n"
+for h in log_headers {
+  table_html = table_html + "        <th class='table-th' scope='col'>" + h + "</th>\n"
+}
+table_html = table_html + "      </tr>\n    </thead>\n    <tbody>\n"
+for row in log_rows {
+  table_html = table_html + "      <tr class='table-row'>\n"
+  for cell in row {
+    table_html = table_html + "        <td class='table-td'>" + cell + "</td>\n"
+  }
+  table_html = table_html + "      </tr>\n"
+}
+table_html = table_html + "    </tbody>\n  </table>\n</div>"
+// Accordion detailing raw database backups
+let accordion_items = [
+  {
+    "title": "Telemetry Database Backup Reference",
+    "content": "A backup of the stateful flat-file JSON database was generated successfully at: <code>" + str(db_backup) + "</code>. You can copy this file to restore database states programmatically using the <code>restore_db</code> utility."
+  },
+  {
+    "title": "Systems Architecture Specifications",
+    "content": "This dashboard compiles system telemetry data dynamically. It calls local analytical libraries for calculation and executes with zero client-side dependencies. Style tokens use vanilla brutalist layout models."
+  }
+]
+let accordion_html = compile_accordion(accordion_items)
+// Progress bars for resource metrics
+let cpu_progress = compile_progress_bar("Core Processors (CPU) load", current_cpu_val)
+let mem_progress = compile_progress_bar("Cluster Memory Allocation", 74)
+let keybind_hints = [
+  {"keys": "CTRL + S", "action": "Refresh Metrics"},
+  {"keys": "CTRL + B", "action": "Initiate Database Backup"},
+  {"keys": "ALT + X", "action": "Export to SpreadsheetML"}
+]
+let keybind_html = compile_keybind_bar(keybind_hints)
+// Assemble final page content
+let main_content = ""
+main_content = main_content + breadcrumb_html
+main_content = main_content + "<h2 style='border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-top: 0;'>SYSTEM STATUS</h2>"
+main_content = main_content + bento_grid_html
+// Row 1: Horizontal Bar Chart + Pie Chart
+main_content = main_content + "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 30px 0;'>\n"
+main_content = main_content + "  <div>\n" + bar_chart_html + "\n  </div>\n"
+main_content = main_content + "  <div>\n" + pie_chart_html + "\n  </div>\n"
+main_content = main_content + "</div>\n"
+// Row 2: Upgraded Line Chart + Gauge Metric
+main_content = main_content + "<div style='display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin: 30px 0;'>\n"
+main_content = main_content + "  <div>\n" + sparkline_html + "\n  </div>\n"
+main_content = main_content + "  <div>\n" + gauge_html + "\n    <div style='margin-top: 20px;'>" + cpu_progress + mem_progress + "</div>\n  </div>\n"
+main_content = main_content + "</div>\n"
+// Row 3: New Advanced Candlestick Chart + Treemap Chart
+main_content = main_content + "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 30px 0;'>\n"
+main_content = main_content + "  <div>\n" + candlestick_html + "\n  </div>\n"
+main_content = main_content + "  <div>\n" + treemap_html + "\n  </div>\n"
+main_content = main_content + "</div>\n"
+main_content = main_content + search_bar_html
+main_content = main_content + table_html
+main_content = main_content + "<h2 style='border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-top: 40px;'>DOCUMENTATION</h2>"
+main_content = main_content + accordion_html
+main_content = main_content + keybind_html
+// Render full index.html page
+let final_html = generate_page("Webpage Factory Demo Dashboard", main_content)
+try {
+  write_file("demo/index.html", final_html)
+} catch (err) {
+  print "✗ Failed to write demo dashboard page:" err
+}
+print "✓ Dashboard webpage generated at: demo/index.html"
+print "✓ CSV Export saved to: demo/telemetry.csv"
+print "✓ JSON Export saved to: demo/telemetry.json"
+print "✓ Excel Spreadsheet XML saved to: demo/telemetry.xls"
+print "✓ Word Document XML saved to: demo/telemetry.doc"
+print "=== Dashboard Build Completed ==="

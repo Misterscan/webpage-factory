@@ -1,0 +1,21 @@
+{
+  "title": "Sesi DB Helper",
+  "description": "A lightweight, zero-dependency flat-file JSON database utility for persistent stateful storage in Sesi.",
+  "summary": "This module provides a comprehensive suite of CRUD operations for managing local JSON-based data collections. It includes features for record insertion with auto-generated IDs, advanced filtering with AND logic, pagination, and sorting. Additionally, it supports collection management, bulk deletion, and built-in backup/restore functionality to ensure data integrity. The database is stored as a single flat file, making it ideal for simple, local-first applications.",
+  "code_examples": [
+    {
+      "description": "Initialize the database and insert a new record into a collection.",
+      "code": "init_db(\"data.json\");\ninsert_record(\"data.json\", \"users\", {\"name\": \"Alice\", \"role\": \"admin\"});"
+    },
+    {
+      "description": "Retrieve paginated records from a collection with a filter.",
+      "code": "let results = find_records_paginated(\"data.json\", \"users\", \"role\", \"admin\", 10, 0);"
+    }
+  ],
+  "key_rules": [
+    "The database must be initialized via init_db or read_db before performing operations to ensure the file structure exists.",
+    "Records are automatically assigned a unique 'id' field upon insertion using a combination of time and random values.",
+    "All write operations (insert, update, delete) trigger a full file rewrite, which may impact performance on very large datasets.",
+    "The module relies on standard JSON parsing and file system access, requiring appropriate read/write permissions for the target path."
+  ]
+}

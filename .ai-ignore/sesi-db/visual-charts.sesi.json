@@ -1,0 +1,21 @@
+{
+  "title": "Sesi Native Brutalist Visual Charting Engine",
+  "description": "A specialized library for generating high-density, static dashboard visualizations using pure HTML, CSS, and SVG without client-side JavaScript.",
+  "summary": "This engine provides a suite of functions to render various data visualizations including bar charts, sparklines, gauges, pie/donut charts, heatmaps, scatter plots, radar charts, funnels, candlesticks, and treemaps. It utilizes a 'brutalist' aesthetic, characterized by high-contrast colors and clean, geometric SVG paths. The library is designed for low-latency, server-side generation of static dashboard components. It includes internal trigonometric helpers for SVG arc calculations and dynamic color-coding logic based on data thresholds.",
+  "code_examples": [
+    {
+      "description": "Generating a simple horizontal bar chart",
+      "code": "let data = [{\"label\": \"CPU\", \"value\": 45}, {\"label\": \"RAM\", \"value\": 72}];\nlet chart = compile_bar_chart(data, \"System Load\");"
+    },
+    {
+      "description": "Generating a sparkline from a numeric array",
+      "code": "let values = [10, 25, 15, 40, 30];\nlet spark = compile_sparkline(values, \"Traffic Trends\");"
+    }
+  ],
+  "key_rules": [
+    "All charts are rendered as static HTML/SVG strings; no client-side JavaScript is required for interactivity or rendering.",
+    "The engine uses a specific 'brutalist' color palette, primarily relying on neon greens, reds, and yellows for status indicators.",
+    "SVG coordinate systems are hard-coded for specific viewboxes, requiring data normalization within the functions.",
+    "The library includes custom trigonometric approximations (Taylor series) for sine and cosine to handle SVG path geometry."
+  ]
+}

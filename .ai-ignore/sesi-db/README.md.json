@@ -1,0 +1,21 @@
+{
+  "title": "webpage-factory Project Documentation",
+  "description": "A self-contained Sesi project designed for programmatically compiling responsive HTML pages, data reports, and visual charts.",
+  "summary": "The webpage-factory project provides a comprehensive suite of Sesi modules for building static web content without client-side JavaScript. It includes tools for site construction, markdown parsing, SVG-based data visualization, and CSV data analysis. Additionally, it features a flat-file JSON database engine for persistent storage and management. The project is managed via a CLI that supports compilation, linting, and file encryption tasks.",
+  "code_examples": [
+    {
+      "description": "Execute the main Sesi program",
+      "code": "npm start"
+    },
+    {
+      "description": "Import and use a site-builder function",
+      "code": "import { generate_page } from \"site-builder\";\ngenerate_page(\"My Title\", \"<h1>Hello World</h1>\");"
+    }
+  ],
+  "key_rules": [
+    "All visual charts are rendered as pure HTML/CSS/SVG with zero client-side JavaScript.",
+    "The project utilizes a custom Sesi interpreter and CLI for all compilation and execution tasks.",
+    "Database operations are performed using a flat-file JSON storage engine.",
+    "The site-builder module provides functions for generating responsive layouts such as bento grids, accordions, and modals."
+  ]
+}
