@@ -1,0 +1,33 @@
+/* theme.css */
+:root {
+    --bg-primary: #0a0a0c;
+    --bg-secondary: #121218;
+    --bg-tertiary: #1a1a24;
+
+    --text-primary: #f0f0f5;
+    --text-secondary: #a0a0b0;
+    --text-muted: #62627a;
+
+    --primary: #00ff66;
+    --primary-glow: rgba(0, 255, 102, 0.25);
+
+    --secondary: #00ffff;
+    --secondary-glow: rgba(0, 255, 255, 0.25);
+
+    --accent: #ffb700;
+    --accent-glow: rgba(255, 183, 0, 0.25);
+
+    --danger: #ff3366;
+    --border-color: #2a2a3a;
+
+    --font-family: 'Space Mono', 'Share Tech Mono', monospace;
+    --border-radius: 4px;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+}

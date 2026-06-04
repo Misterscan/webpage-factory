@@ -1,0 +1,65 @@
+/* layout.css */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin: 24px 0;
+}
+
+.grid-item {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    transition: all 0.2s ease;
+    box-shadow: 4px 4px 0px var(--border-color);
+}
+
+.grid-item:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--primary);
+    border-color: var(--primary);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.item-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.item-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.item-body {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.item-badge {
+    display: inline-block;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
