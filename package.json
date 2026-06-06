@@ -17,7 +17,8 @@
     "support": "sesi chatbot/sesi_db_chatbot.sesi",
     "lint": "sesi bin/lint.sesi",
     "encrypt": "sesi -enc",
-    "decrypt": "sesi -dec"
+    "decrypt": "sesi -dec",
+    "server": "sesi server.sesi -l"
   },
   "dependencies": {
     "@misterscan/sesi": "1.5.1"

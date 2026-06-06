@@ -228,12 +228,13 @@ try {
   print "--------------------------------------------------"
   print "🤖 SESI IS THINKING:"
   print "--------------------------------------------------"
+  let rec = {"summary": "No match found", "key_rules": ""}
+  let sesiDocs = ""
   if max_score < 0.40 {
     print "   Please ask again."
   } else {
-    let rec = database[best_class]
+    rec = database[best_class]
     let docs_list = list_dir(".ai-ignore/refs")
-    let sesiDocs = ""
     let d = 0
     while d < len(docs_list) {
       let f_name = docs_list[d]
@@ -241,13 +242,26 @@ try {
       let ext = parts[len(parts) - 1]
       
       if ext == "md" {
-        let doc_content = read_file(".ai-ignore/refs/" + f_name)
-        sesiDocs = sesiDocs + "\n\n=== DOCUMENT: " + f_name + " ===\n" + doc_content
+        try {
+          let doc_content = read_file(".ai-ignore/refs/" + f_name)
+          sesiDocs = sesiDocs + "\n\n=== DOCUMENT: " + f_name + " ===\n" + doc_content
+        } catch (e) {}
       }
       d = d + 1
     }
-  } catch (e) {}
-    
+  }
+  let webpage_modules = ""
+  try {
+    let exports_list = list_dir("exports")
+    let e_idx = 0
+    while e_idx < len(exports_list) {
+      let e_file = exports_list[e_idx]
+      let e_content = read_file("exports/" + e_file)
+      webpage_modules = webpage_modules + "\n\n=== MODULE: " + e_file + " ===\n" + e_content
+      e_idx = e_idx + 1
+    }
+  } catch (err) {}
+
   let instructions = "Instructions: sesi compile is not a command. If Active File Context is present, use it directly and talk about that file concretely. Be helpful and robust. Show code examples. Do NOT invent syntax. ALWAYS use the 'exports/' prefix for imports (e.g. import {...} from \"exports/...\"). If you do not see it represented in the .sesi code examples or documentation, it is NOT the syntax. Do not ask follow up questions."
   let ragPrompt = "Sesi Official Reference Documentation:\n" + sesiDocs + "\n\nSesi Module Source Code (USE THESE FUNCTIONS):\n" + webpage_modules + "\n\nUser Query: " + queryText + "\n\nActive File Context:\n" + fileContext + "\n\nMatched Context from Sesi DB:\nSummary: " + rec["summary"] + "\nKey Rules: " + rec["key_rules"]
   let persona = "SYSTEM PERSONA: Your name is Sesi Co-Pilot."
