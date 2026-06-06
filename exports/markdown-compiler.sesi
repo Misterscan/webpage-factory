@@ -384,7 +384,7 @@ export fn parse_inline_code(line: string) -> string {
     let idx = 1
     while idx < len(segs) {
       if idx % 2 == 1 {
-        out = out + "<code style='background:#111; color:#00ff66; padding:1px 5px; border-radius:3px; font-size:0.9em;'>" + segs[idx] + "</code>"
+        out = out + "<code>" + segs[idx] + "</code>"
       } else {
         out = out + segs[idx]
       }
@@ -414,7 +414,7 @@ export fn parse_footnote_refs(line: string) -> string {
         rest = rest + inner[ri]
         ri = ri + 1
       }
-      out = out + "<sup><a class='fn-ref' href='#fn-" + key + "' style='color:#00ff66;'>[" + key + "]</a></sup>" + rest
+      out = out + "<sup><a class='fn-ref' href='#fn-" + key + "'>[" + key + "]</a></sup>" + rest
     } else {
       out = out + "[^" + segs[idx]
     }
@@ -443,7 +443,7 @@ export fn parse_blockquote_line(line: string) -> string {
   let segs = split(line, "> ")
   if len(segs) > 1 {
     let content = parse_inline_full(segs[1])
-    return "<blockquote class='md-blockquote' style='border-left:4px solid #00ff66; margin:0; padding:4px 14px; color:#88ff88;'><p>" + content + "</p></blockquote>\n"
+    return "<blockquote class='md-blockquote'><p>" + content + "</p></blockquote>\n"
   }
   return "<p>" + parse_inline_full(line) + "</p>\n"
 }
@@ -517,7 +517,7 @@ export fn is_ordered_item(line: string) -> string {
 export fn compile_table(tableLines: array) -> string {
   if len(tableLines) < 2 { return "" }
 
-  let html = "<div class='md-table-wrap' style='overflow-x:auto; margin:1rem 0;'>\n<table class='md-table' style='border-collapse:collapse; width:100%; font-size:0.9rem;'>\n"
+  let html = "<div class='md-table-wrap'>\n<table class='md-table'>\n"
 
   // Header row — first line
   let headerLine = tableLines[0]
@@ -525,7 +525,7 @@ export fn compile_table(tableLines: array) -> string {
   html = html + "<thead>\n<tr>\n"
   for cell in headerCells {
     if len(cell) > 0 {
-      html = html + "  <th style='border:1px solid #333; padding:6px 10px; background:#111; color:#00ff66; text-align:left;'>" + parse_inline_full(cell) + "</th>\n"
+      html = html + "  <th>" + parse_inline_full(cell) + "</th>\n"
     }
   }
   html = html + "</tr>\n</thead>\n<tbody>\n"
@@ -538,7 +538,7 @@ export fn compile_table(tableLines: array) -> string {
     html = html + "<tr>\n"
     for cell in rowCells {
       if len(cell) > 0 {
-        html = html + "  <td style='border:1px solid #222; padding:5px 10px; color:#ccc;'>" + parse_inline_full(cell) + "</td>\n"
+        html = html + "  <td>" + parse_inline_full(cell) + "</td>\n"
       }
     }
     html = html + "</tr>\n"
@@ -583,10 +583,10 @@ export fn collect_footnotes(lines: array) -> string {
   }
   if len(notes) == 0 { return "" }
 
-  let html = "<footer class='md-footnotes' style='border-top:1px solid #222; margin-top:2rem; padding-top:1rem; font-size:0.82rem; color:#888;'>\n"
-  html = html + "<ol class='footnote-list' style='padding-left:1.5rem;'>\n"
+  let html = "<footer class='md-footnotes'>\n"
+  html = html + "<ol class='footnote-list'>\n"
   for note in notes {
-    html = html + "  <li id='fn-" + note["key"] + "' style='margin-bottom:4px;'>" + parse_inline_full(note["text"]) + "</li>\n"
+    html = html + "  <li id='fn-" + note["key"] + "'>" + parse_inline_full(note["text"]) + "</li>\n"
   }
   html = html + "</ol>\n</footer>\n"
   return html
@@ -645,6 +645,8 @@ export fn parse_markdown_full(mdText) {
         let btSegs = split(line, "```")
         if len(btSegs) > 1 {
           lang = btSegs[1]
+          let rSegs = split(lang, "\r")
+          lang = rSegs[0]
         }
         if lang == "mermaid" {
           html = html + "<div class='mermaid'>\n"
@@ -685,7 +687,7 @@ export fn parse_markdown_full(mdText) {
           html = html + "</ul>\n"
           inUl = false
         }
-        html = html + "<hr style='border:none; border-top:1px solid #333; margin:1.5rem 0;' />\n"
+        html = html + "<hr />\n"
       } else if len(line) > 0 {
         let chars = split(line, "")
         let isTableRow = false

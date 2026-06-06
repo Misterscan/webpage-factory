@@ -1,4 +1,4 @@
-# Sesi Language Specification (v1.3)
+# Sesi Language Specification (v1.5)
 
 ## 1. Philosophy & Design Principles
 
@@ -6,13 +6,13 @@ Sesi is built on these core principles:
 
 1. **Conciseness and Legibility**: The syntax is minimal. If a concept can be expressed simply, the language gets out of the way to let you express it.
 2. **Buildable from Scratch**: Sesi is a complete, functioning language with its own lexer, parser, and interpreter.
-3. **Simplicity Enables Power**: Because the core language is simple, complex operations become trivial extensions of the language.
+3. **Simplicity Enables Power**: Because the core language is simple, complex operations (like hitting APIs or orchestrating processes) become trivial extensions of the language, rather than tangled SDK implementations.
 4. **Transparency Over Magic**: Sesi executes exactly what you write.
 5. **Practicality**: Focus on reducing boilerplate code, emphasizing what developers actually need over academic completeness.
 
 ## 2. Target Users
 
-**Primary**: Developers who want a clean, fast, and legible language where writing code, whether purely logic-based is completely frictionless.
+**Primary**: Developers who want a clean, fast, and legible language where writing code, whether purely logic-based or calling out to a Reasoning model, is completely frictionless.
 
 **Secondary**:
 
@@ -27,7 +27,7 @@ Sesi is built on these core principles:
 - Quickly orchestrating shell commands
 - Rapid prototyping and scripting
 
-## 3. V1.3 Feature Set (Current)
+## 3. V1.5 Feature Set (Current)
 
 ### Core Language Features
 
@@ -41,6 +41,19 @@ Sesi is built on these core principles:
 - ✅ Comments (`//`, `/* */`)
 - ✅ Operators (arithmetic, logical, comparison)
 - ✅ Standard library (print, len, range, etc.)
+- ✅ Interactive REPL shell environment (`sesi --repl`)
+- ✅ Diagnostic Tools (`--ast` and `--tokens` pretty visualization)
+- ✅ Statement execution tracing (`SESI_DEBUG=1` env variable)
+- ✅ `prompt` blocks (composable templates for concise formatting)
+- ✅ `structured_output()` (schema-guided structured output with JSON recovery and empty-object fallback on failure)
+- ✅ `tool_call()` (Fully functional function calling for tool use)
+- ✅ `memory` (simple multi-turn script memory and retrieval context management)
+
+### Reasoning-Native Features
+
+- ✅ `model()` calls (native model with configuration)
+- ✅ `image()` calls (native image generation with configuration)
+- ✅ `images` config key (multimodal vision input for `model()` and `image()`)
 
 ### Type System
 
@@ -64,8 +77,8 @@ Sesi is built on these core principles:
 #### Keywords
 
 ```
-let if else while for fn print import export
-structured_output tool_call break continue try catch true false null
+let if else while for fn print import export async
+prompt model image convert memory structured_output tool_call break continue try catch true false null await
 ```
 
 #### Identifiers & Literals
@@ -110,7 +123,7 @@ let z  // z is null initially
 #### Function Declaration
 
 ```
-fn_stmt := 'fn' identifier '(' parameters ')' '->' type? block
+fn_stmt := 'async'? 'fn' identifier '(' parameters ')' '->' type? block
 parameters := (identifier ':' type ('=' expr)?)? (',' identifier ':' type ('=' expr)?)*
 ```
 
@@ -194,9 +207,9 @@ equality := comparison (('==' | '!=') comparison)*
 comparison := addition (('<' | '>' | '<=' | '>=' | '<>') addition)*
 addition := multiplication (('+' | '-') multiplication)*
 multiplication := unary (('*' | '/' | '%') unary)*
-unary := ('!' | '-') unary | postfix
+unary := ('!' | '-' | 'await') unary | postfix
 postfix := primary ('['expression']' | '.'identifier | '('args?')' | primary)*
-primary := identifier | literal | '('expression')' | prompt | model | image | memory | call
+primary := identifier | literal | '('expression')' | prompt | model | image | convert | memory | call
 ```
 
 #### Function Call
@@ -212,18 +225,80 @@ prompt := 'prompt' identifier '{'content'}'
 content := (string | expression | newline)
 ```
 
-Examples:
+Example:
 
 ```sesi
-prompt circleSVG {"<svg width='100' height='100'><circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' /></svg>"}
-prompt greeting {"Hello " name}
-prompt table {"<p>Here is a list of my favorite fruits:</p>
-<table border='1'><thead><tr><th>Fruit</th><th>Color</th></tr></thead>
-<tbody>
-  <tr><td>Apple</td><td>Red</td></tr>
-  <tr><td>Banana</td><td>Yellow</td></tr>
-  <tr><td>Grapes</td><td>Purple</td></tr>
-  </tbody></table>"}
+prompt codeReview {"Review this code for bugs:" code "Provide specific issues found."}
+```
+
+#### Model & Image Calls
+
+```
+model_call := 'model' '('STRING')' config_block? '{'prompt'}'
+image_call := 'image' '('STRING')' config_block? '{'prompt'}'
+convert := 'convert' '('(identifier | STRING)')' config_block? '{'file'}'
+config_block := '{' config_entry (',' config_entry)* '}'
+config_entry := (STRING | identifier) ':' expression
+```
+
+**Config keys:**
+
+| Key             | Applies to       | Type                      | Description                                                                |
+| --------------- | ---------------- | ------------------------- | -------------------------------------------------------------------------- |
+| `thinkingLevel` | `model`          | `string \| object`        | **Recommended**: Effort level (`"minimal"`, `"low"`, `"medium"`, `"high"`) |
+| `temperature`   | `model`, `image` | `number`                  | \*Will be deprecated in Gemini 3.x+\_ (Sampling temperature)               |
+| `max_tokens`    | `model`          | `number`                  | Max output token count                                                     |
+| `top_k`         | `model`          | `number`                  | \*Will be deprecated in Gemini 3.x+\_                                      |
+| `top_p`         | `model`          | `number`                  | \*Will be deprecated in Gemini 3.x+\_                                      |
+| `ratio`         | `image`          | `string`                  | Aspect ratio e.g. `"16:9"`                                                 |
+| `size`          | `image`          | `string`                  | `"512"`, `"1K"`, `"2K"`, `"4K"`                                            |
+| `images`        | `model`, `image` | `string \| array<string>` | Local file path(s) passed as visual input                                  |
+
+Example:
+
+```sesi
+let result = model("gemini-3.5-flash") {images: "scan.png", thinkingLevel: "low"} {"Transcribe all visible text."}
+let output = model("gemini-3.5-flash") {thinkingLevel: "medium"} {prompt}
+```
+
+#### Convert Expression
+
+```
+convert := 'convert' '('(identifier | STRING)')' config_block? '{'file'}'
+```
+
+The `convert` expression transforms documents or media files between different formats (e.g. images, audio, documents).
+
+**Config keys:**
+
+- `file_type`: The input format extension (e.g. `"md"`, `"csv"`, `"png"`, `"wav"`). If the input is a local file path, this key is optional and can be inferred from the file extension.
+- `output_type`: The target format extension (e.g. `"html"`, `"json"`, `"jpg"`, `"mp3"`). This key is required.
+
+Example:
+
+```sesi
+let html = convert(doc) {file_type: "md", output_type: "html"} {"# Heading\nHello world"}
+let json = convert(doc) {file_type: "csv", output_type: "json"} {"name,age\nAlice,30"}
+let converted_file = convert(doc) {file_type: "md", output_type: "html"} {"input.md"}
+```
+
+#### Await Expression
+
+```
+await_expr := 'await' expression
+```
+
+The `await` expression is used to block execution and resolve the value of a Sesi Promise returned by an asynchronous function.
+
+Example:
+
+```sesi
+async fn getGreeting(name) {
+  return "Hello, " + name
+}
+
+let p = getGreeting("Alice") // returns a Sesi promise
+let greeting = await p // blocks and resolves to "Hello, Alice"
 ```
 
 #### Structured Output
@@ -236,14 +311,14 @@ schema := '{' (identifier ':' type (',' identifier ':' type)*)? '}'
 Example:
 
 ```sesi
-let rawJson = "{\"projectName\": \"Sesi\", \"version\": \"1.3.0\", \"status\": \"active\"}"
+let rawJson = "{\"projectName\": \"Sesi\", \"version\": \"1.5.0\", \"status\": \"active\"}"
 let parsedRegistry = structured_output({projectName: string, version: string, status: string})(rawJson)
 ```
 
 #### Tool Call
 
 ```
-tool_call := 'tool_call' '('function_name')' '('(expressions)?')'
+tool_call := 'tool_call' '('function_name')' '('(model_call | expressions)?')'
 ```
 
 Example (Native Sandboxed Dispatch):
@@ -262,7 +337,9 @@ memory := 'memory' identifier ('{'expressions'}')?
 Example:
 
 ```sesi
-memory favoriteAlbums {"Abbey Road", "The Dark Side of the Moon", "Rumours", "Thriller", "Led Zeppelin IV"}
+memory conversation {"Previous messages here"}
+let response = model("gemini-3-flash-preview") {prompt {conversation "New question:" userInput}}
+conversation = conversation "Assistant:" response
 ```
 
 ### 4.6 Type Annotations
@@ -279,7 +356,8 @@ optional_type := type '?'
 
 1. **Short-circuit evaluation**: `&&` and `||` short-circuit
 2. **Type coercion**: Automatic for numeric operations; explicit for string/number
-3. **Null propagation**: Operations on `null` return `null` (no exceptions in v1.3)
+3. **Null propagation**: Operations on `null` return `null` (no exceptions in v1.x)
+4. **Model responses**: Always returned as strings initially; structured_output provides type safety
 
 ## 6. Scope and Binding
 
@@ -296,22 +374,26 @@ optional_type := type '?'
 1. Tokenize (lexer)
 2. Parse (parser) → AST
 3. Evaluate (interpreter)
+4. Model calls are **blocking** (no async in v1)
 
-### Memory
+### Memory Model
 
 - **Stack**: Local variables, function parameters
 - **Heap**: Arrays, objects, strings
+- **Reasoning Context**: Implicit conversation history per `memory` binding
 
 ### Error Handling (V1 Simple)
 
-- Runtime errors can be caught with `try/catch`
+- Runtime and model errors can be caught with `try/catch`
+- Model errors throw when Gemini returns no text or a non-`STOP` finish reason
 - `read_file()`, `write_file()`, and `list_dir()` throw on filesystem failure
 - `structured_output()` currently logs parsing failures and returns `{}` if recovery fails
 
-## 8. Built-in Functions (V1)
+## 8. Built-in Functions (V1.x)
 
 ```
 print(any)                    // Output to stdout
+debug()                       // Pauses and opens interactive REPL debugger
 len(array | string | object)  // Length
 range(number) -> array        // [0, 1, ..., n-1]
 type(any) -> string           // Type name
@@ -341,7 +423,7 @@ random() -> number                // Random float (0.0 to 1.0)
 
 ## 9. Module System
 
-Runtime module execution and standard namespace modules are fully implemented and natively supported in v1.3+.
+Runtime module execution and standard namespace modules are fully implemented and natively supported in v1.x.
 
 ### Defining Modules
 
@@ -367,7 +449,7 @@ import math from "std/math"    // Math operations
 import json from "std/json"    // JSON parsing
 ```
 
-### Module Resolution Order (v1.3+)
+### Module Resolution Order (v1.x)
 
 When you write `import {x} from "mymodule"`, Sesi searches for `mymodule.sesi` in the following order, stopping at the first match:
 
@@ -420,9 +502,69 @@ Multiple paths are separated by `;` on Windows and `:` on Unix.
 
 When a module is loaded from any search path, its own imports are resolved **relative to that module's directory first**. This means modules can safely import their own siblings without any path configuration.
 
-## 10. Example
+## 10. Reasoning Features Details
 
-### Simple Computation
+### Prompt Blocks
+
+Prompts are composable message templates:
+
+```sesi
+prompt translate {"translate the following to Spanish:" sourceText}
+prompt summarize {"Summarize this in 3 sentences:" text}
+prompt combined {summarize " Now " translate}
+```
+
+### Model & Image Calls
+
+Model calls can take optional configuration parameters (written on a single line) followed by one or more prompts/strings.
+
+```sesi
+// Model call with native thinking effort level
+let response = model("gemini-3.5-flash") {thinkingLevel: "low"} {"Say hello"}
+print response  // Returns string
+
+let logo = image("gemini-3.1-flash-image-preview") {ratio: "1:1", size: "512"} {"A vector logo"}
+write_image("logo.png", logo)
+print "Image written to logo.png"
+```
+
+#### Config Block Options:
+
+- **`thinkingLevel`**: `string` (`"minimal"`, `"low"`, `"medium"`, `"high"`) or legacy `object` with keys `"thinking"` and `"level"`. Natively configures Gemini's reasoning budget.
+- **`max_tokens`**: `number` (maximum response tokens)
+- **`images`**: `string` or `array<string>` (paths to multimodal vision input files)
+- **`cache`**: `bool` (set to `false` to explicitly bypass Sesi Logic Caching)
+- **`temperature`**: _ Will be deprecated in Gemini 3.x+, use thinkingLevel instead._ — reasoning is pre-optimized for defaults.
+- **`top_k` / `top_p`**: _ Will be deprecated in Gemini 3.x+, use thinkingLevel instead._ — reasoning is pre-optimized for defaults.
+
+### Reasoning with Structured Output
+
+```sesi
+let result = structured_output({title: string, category: string, confidence: number})(model("gemini-3.1-flash-lite") {"Extract metadata from this text:" text})
+print result.title       // Access fields
+print result.confidence  // Type-safe access
+```
+
+### Reasoning with Tool Calling
+
+```sesi
+fn calculateTax(amount: number, rate: number) {print amount * rate}
+let taxAmount = tool_call(calculateTax)(model("gemini-3.1-flash-lite") {"Calculate 8% tax on $100"})
+taxAmount
+```
+
+### Reasoning with Memory
+
+```sesi
+memory chat {"System: You are a helpful assistant."}
+fn askQuestion(question: string)
+{let response = model("gemini-3-flash-preview") {chat "User:" question}
+chat = chat "Assistant:" response}
+```
+
+## 11. Examples
+
+### Example 1: Simple Computation
 
 ```sesi
 let x = 10
@@ -430,9 +572,24 @@ let y = 20
 print x + y  // Output: 30
 ```
 
-## 12. Undefined Behavior & Limitations (V1.3)
+### Example 2: Function with Reasoning
 
-- **No async/await**: All operations within a script are blocking. Concurrency must be achieved via `spawn()`.
+```sesi
+fn analyzeText(text: string) -> string {return model("gemini-3.5-flash") {thinkingLevel: "low"} {"Analyze this text and return key insights:" text}}
+print analyzeText("Reasoning is transforming industries")
+```
+
+### Example 3: Reasoning with Structured Output
+
+```sesi
+let sentiment = structured_output({label: string, score: number})(model("gemini-3-flash-preview") {"Analyze sentiment of:" userInput})
+print sentiment.label
+print sentiment.score
+```
+
+## 12. Undefined Behavior & Limitations (V1.x)
+
+- **No async/await**: All operations within a script are blocking (including model calls). Concurrency must be achieved via `spawn()`.
 - **No custom types**: Only built-in types are supported natively.
 - **No pattern matching**: Basic if/else only.
 - **No generics**: Array and object collections are untyped at runtime.
@@ -444,3 +601,5 @@ print x + y  // Output: 30
 ## 13. Compatibility Notes
 
 - Sesi programs run on Node.js 18+
+- Requires `@google/genai` SDK v2.0.1+
+- Requires valid Gemini API key (GEMINI_API_KEY env var)

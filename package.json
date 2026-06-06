@@ -1,6 +1,6 @@
 {
   "name": "webpage-factory",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Sesi project for building webpages.",
   "main": "dist/index.js",
   "bin": {
@@ -9,21 +9,21 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "sesi": "node bin/sesi.js",
-    "start": "node bin/sesi.js -l main.sesi",
-    "demo": "node bin/sesi.js -l demo/demo.sesi",
-    "eval": "node bin/sesi.js -e",
-    "help": "node bin/sesi.js -h",
-    "support": "node bin/sesi.js chatbot/sesi_db_chatbot.sesi",
-    "lint": "node bin/sesi.js bin/lint.sesi",
-    "encrypt": "node bin/sesi.js -enc",
-    "decrypt": "node bin/sesi.js -dec"
+    "sesi": "sesi",
+    "start": "sesi -l main.sesi",
+    "demo": "sesi -l demo/demo.sesi",
+    "eval": "sesi -e",
+    "help": "sesi -h",
+    "support": "sesi chatbot/sesi_db_chatbot.sesi",
+    "lint": "sesi bin/lint.sesi",
+    "encrypt": "sesi -enc",
+    "decrypt": "sesi -dec"
   },
   "dependencies": {
-    "@misterscan/sesi": "1.3.4"
+    "@misterscan/sesi": "1.5.1"
   },
   "devDependencies": {
-    "@misterscan/sesi": "1.3.4"
+    "@misterscan/sesi": "1.5.1"
   },
   "keywords": [
     "sesi",

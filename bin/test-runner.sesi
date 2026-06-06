@@ -1,0 +1,72 @@
+// test-runner.sesi
+// A lightweight test-runner framework for modular Sesi scripts.
+// Includes beautiful custom color logs, assertion utilities, and final test suite counters.
+
+let green_tick = "✓ "
+let red_cross = "❌ "
+
+export fn assert_equals(actual, expected, testName: string) {
+  if actual == expected {
+    print green_tick "PASS:" testName
+    return true
+  } else {
+    print red_cross "FAIL:" testName
+    print "  -> Expected:" expected
+    print "  -> Actual:" actual
+    return false
+  }
+}
+
+export fn assert_not_null(val, testName: string) {
+  if val == null {
+    print red_cross "FAIL:" testName "(Value is null)"
+    return false
+  } else {
+    print green_tick "PASS:" testName
+    return true
+  }
+}
+
+export fn run_test_suite(suiteName: string, results: array) {
+  print "========================================="
+  print "   TEST SUITE RUNNER:" suiteName
+  print "========================================="
+  
+  let passed = 0
+  let failed = 0
+  
+  for res in results {
+    if res == true {
+      passed = passed + 1
+    } else {
+      failed = failed + 1
+    }
+  }
+  
+  print "-----------------------------------------"
+  print "📊 Final Summary:"
+  print "   Passed:" passed
+  print "   Failed:" failed
+  
+  if failed == 0 {
+    print "🎉 ALL TESTS PASSED SUCCESSFULLY!"
+  } else {
+    print "⚠️ SOME TESTS FAILED. PLEASE AUDIT SPECIFICATIONS."
+  }
+  print "========================================="
+  
+  if failed == 0 {
+    return true
+  }
+  return false
+}
+
+define_tool("assert_equals", assert_equals, "Asserts that two values are equal.")
+define_tool("assert_not_null", assert_not_null, "Asserts that a value is not null.")
+define_tool("run_test_suite", run_test_suite, "Runs a test suite.")
+
+let _registry = list_tools()
+print "test-runner tool registry loaded -" str(len(_registry)) "tools available"
+
+// Example Usage: 
+// run_test_suite("Test Suite", [assert_equals(1, 1, "Test 1"), assert_not_null(1, "Test 2")])
