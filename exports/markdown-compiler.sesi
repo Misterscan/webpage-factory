@@ -895,24 +895,37 @@ export fn compile_markdown_dir(mdDir: string, outputDir: string) {
 }
 
 // Tool Registry
-define_tool("parse_bold",                 parse_bold,                 "Transform bold markers to strong tags")
-define_tool("parse_italic",               parse_italic,               "Transform italic markers to em tags")
-define_tool("parse_links",                parse_links,                "Transform markdown links to anchor tags")
-define_tool("parse_inline",               parse_inline,               "Run bold, italic, link inline transforms (original)")
-define_tool("parse_inline_code",          parse_inline_code,          "Transform backtick code spans to styled code tags")
-define_tool("parse_footnote_refs",        parse_footnote_refs,        "Transform footnote references to superscript links")
-define_tool("parse_inline_full",          parse_inline_full,          "Run all inline transforms: bold, italic, links, code, footnotes")
-define_tool("parse_blockquote_line",      parse_blockquote_line,      "Convert a single blockquote line to HTML")
-define_tool("compile_table",              compile_table,              "Convert collected pipe-table lines to an HTML table")
-define_tool("collect_footnotes",          collect_footnotes,          "Scan lines for footnote definitions and render a footer")
-define_tool("is_hr",                      is_hr,                      "Detect horizontal rule lines")
-define_tool("task_list_type",             task_list_type,             "Detect task list items: returns checked, unchecked, or empty string")
-define_tool("is_ordered_item",            is_ordered_item,            "Detect ordered list items starting with N. text")
-define_tool("parse_markdown",             parse_markdown,             "Original markdown parser")
-define_tool("parse_markdown_full",        parse_markdown_full,        "Extended parser with blockquotes, tables, task lists, footnotes, ordered lists, HR, inline code")
-define_tool("compile_markdown_file",      compile_markdown_file,      "Compile a markdown file to HTML (original parser)")
-define_tool("compile_markdown_file_full", compile_markdown_file_full, "Compile a markdown file to HTML (extended parser)")
-define_tool("compile_markdown_dir",       compile_markdown_dir,       "Batch-compile all markdown files in a directory to HTML")
 
-let _registry = list_tools()
-print "markdown-compiler tool registry loaded -" str(len(_registry)) "tools available"
+export fn markdown_tools() {
+  let tool_refs = {}
+
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
+
+  register_tool("parse_bold",                 parse_bold,                 "Transform bold markers to strong tags")
+  register_tool("parse_italic",               parse_italic,               "Transform italic markers to em tags")
+  register_tool("parse_links",                parse_links,                "Transform markdown links to anchor tags")
+  register_tool("parse_inline",               parse_inline,               "Run bold, italic, link inline transforms (original)")
+  register_tool("parse_inline_code",          parse_inline_code,          "Transform backtick code spans to styled code tags")
+  register_tool("parse_footnote_refs",        parse_footnote_refs,        "Transform footnote references to superscript links")
+  register_tool("parse_inline_full",          parse_inline_full,          "Run all inline transforms: bold, italic, links, code, footnotes")
+  register_tool("parse_blockquote_line",      parse_blockquote_line,      "Convert a single blockquote line to HTML")
+  register_tool("compile_table",              compile_table,              "Convert collected pipe-table lines to an HTML table")
+  register_tool("collect_footnotes",          collect_footnotes,          "Scan lines for footnote definitions and render a footer")
+  register_tool("is_hr",                      is_hr,                      "Detect horizontal rule lines")
+  register_tool("task_list_type",             task_list_type,             "Detect task list items: returns checked, unchecked, or empty string")
+  register_tool("is_ordered_item",            is_ordered_item,            "Detect ordered list items starting with N. text")
+  register_tool("parse_markdown",             parse_markdown,             "Original markdown parser")
+  register_tool("parse_markdown_full",        parse_markdown_full,        "Extended parser with blockquotes, tables, task lists, footnotes, ordered lists, HR, inline code")
+  register_tool("compile_markdown_file",      compile_markdown_file,      "Compile a markdown file to HTML (original parser)")
+  register_tool("compile_markdown_file_full", compile_markdown_file_full, "Compile a markdown file to HTML (extended parser)")
+  register_tool("compile_markdown_dir",       compile_markdown_dir,       "Batch-compile all markdown files in a directory to HTML")
+
+  let _registry = list_tools()
+  print "markdown-compiler tool registry loaded -" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+markdown_tools()

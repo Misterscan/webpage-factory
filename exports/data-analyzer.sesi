@@ -458,21 +458,36 @@ export fn export_to_word_xml(records: array, fieldsList: array) -> string {
 
 // ── Tool Definitions ──────────────────────────────────────────────────────────
 
-define_tool("parse_csv",              parse_csv,              "Parse a CSV string into an array of mapped record objects using the first row as headers")
-define_tool("export_to_csv",          export_to_csv,          "Convert an array of record objects back to a CSV string given an ordered fields list")
-define_tool("export_to_json",         export_to_json,         "Serialize an array of record objects to a JSON string")
-define_tool("export_to_excel_xml",    export_to_excel_xml,    "Serialize records to an Excel-compatible XML Spreadsheet (SpreadsheetML 2003) string")
-define_tool("export_to_word_xml",     export_to_word_xml,     "Serialize records to a Microsoft Word-compatible XML document (WordprocessingML 2003) string containing a data table")
-define_tool("compute_average",        compute_average,        "Compute the mean of a numerical field across all records")
-define_tool("compute_sum",            compute_sum,            "Compute the total sum of a numerical field across all records")
-define_tool("compute_max",            compute_max,            "Find the maximum value of a numerical field across all records")
-define_tool("compute_min",            compute_min,            "Find the minimum value of a numerical field across all records")
-define_tool("compute_median",         compute_median,         "Compute the median of a numerical field (middle value of sorted data)")
-define_tool("compute_mode",           compute_mode,           "Return the most frequently occurring value of a field as a string")
-define_tool("compute_std_dev",        compute_std_dev,        "Compute the population standard deviation of a numerical field")
-define_tool("sort_records",           sort_records,           "Sort records by a numerical field ascending or descending (bubble sort)")
-define_tool("filter_records",         filter_records,         "Filter records to those where a field matches a specific string value")
-define_tool("group_by",               group_by,               "Group records into an object keyed by the distinct values of a field")
-define_tool("pluck",                  pluck,                  "Extract a single field from every record into a flat array")
-define_tool("validate_records",       validate_records,       "Check all records contain required fields; returns [{index, missing}] for invalid rows")
-define_tool("validate_numeric_field", validate_numeric_field, "Return indices of records where a field is missing or not numeric")
+export fn data_analyzer_tools() {
+  let tool_refs = {}
+
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
+
+  register_tool("parse_csv",              parse_csv,              "Parse a CSV string into an array of mapped record objects using the first row as headers")
+  register_tool("export_to_csv",          export_to_csv,          "Convert an array of record objects back to a CSV string given an ordered fields list")
+  register_tool("export_to_json",         export_to_json,         "Serialize an array of record objects to a JSON string")
+  register_tool("export_to_excel_xml",    export_to_excel_xml,    "Serialize records to an Excel-compatible XML Spreadsheet (SpreadsheetML 2003) string")
+  register_tool("export_to_word_xml",     export_to_word_xml,     "Serialize records to a Microsoft Word-compatible XML document (WordprocessingML 2003) string containing a data table")
+  register_tool("compute_average",        compute_average,        "Compute the mean of a numerical field across all records")
+  register_tool("compute_sum",            compute_sum,            "Compute the total sum of a numerical field across all records")
+  register_tool("compute_max",            compute_max,            "Find the maximum value of a numerical field across all records")
+  register_tool("compute_min",            compute_min,            "Find the minimum value of a numerical field across all records")
+  register_tool("compute_median",         compute_median,         "Compute the median of a numerical field (middle value of sorted data)")
+  register_tool("compute_mode",           compute_mode,           "Return the most frequently occurring value of a field as a string")
+  register_tool("compute_std_dev",        compute_std_dev,        "Compute the population standard deviation of a numerical field")
+  register_tool("sort_records",           sort_records,           "Sort records by a numerical field ascending or descending (bubble sort)")
+  register_tool("filter_records",         filter_records,         "Filter records to those where a field matches a specific string value")
+  register_tool("group_by",               group_by,               "Group records into an object keyed by the distinct values of a field")
+  register_tool("pluck",                  pluck,                  "Extract a single field from every record into a flat array")
+  register_tool("validate_records",       validate_records,       "Check all records contain required fields; returns [{index, missing}] for invalid rows")
+  register_tool("validate_numeric_field", validate_numeric_field, "Return indices of records where a field is missing or not numeric")
+
+  let _registry = list_tools()
+  print "📦 data-analyzer tool registry loaded —" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+data_analyzer_tools()

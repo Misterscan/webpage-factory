@@ -8,3 +8,4 @@ index.html
 help_response.md
 .ai-ignore/query.txt
 .ai-ignore/help_context.txt
+.DS_Store

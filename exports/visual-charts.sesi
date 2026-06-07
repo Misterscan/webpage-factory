@@ -814,18 +814,29 @@ export fn compile_treemap_chart(data: array, chartTitle: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool Registry
 // ─────────────────────────────────────────────────────────────────────────────
+export fn visual_chart_tools() {
+  let tool_refs = {}
 
-define_tool("compile_bar_chart",    compile_bar_chart,    "Render a brutalist horizontal bar chart from an array of {label, value} items")
-define_tool("compile_sparkline",    compile_sparkline,    "Render an SVG sparkline from an array of numeric values")
-define_tool("compile_gauge_indicator", compile_gauge_indicator, "Render a colour-coded linear gauge bar with dynamic warning thresholds")
-define_tool("compile_pie_chart",    compile_pie_chart,    "Render an SVG pie chart with percentage labels and legend")
-define_tool("compile_donut_chart",  compile_donut_chart,  "Render an SVG donut chart with a centre label and legend")
-define_tool("compile_heatmap",      compile_heatmap,      "Render a CSS grid heatmap with green-to-red intensity colouring")
-define_tool("compile_scatter_plot", compile_scatter_plot, "Render an SVG scatter plot with labelled axes and optional point labels")
-define_tool("compile_radar_chart",  compile_radar_chart,  "Render an SVG radar / spider chart from N-axis {label, value} data")
-define_tool("compile_funnel_chart", compile_funnel_chart, "Render an SVG funnel chart with tapered trapezoid stages")
-define_tool("compile_candlestick_chart", compile_candlestick_chart, "Render a brutalist SVG candlestick chart from OHLC data points")
-define_tool("compile_treemap_chart", compile_treemap_chart, "Render a detailed SVG treemap chart using slice-and-dice partitioning")
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
 
-let _registry = list_tools()
-print "📦 visual-charts tool registry loaded —" str(len(_registry)) "tools available"
+  register_tool("compile_bar_chart",    compile_bar_chart,    "Render a brutalist horizontal bar chart from an array of {label, value} items")
+  register_tool("compile_sparkline",    compile_sparkline,    "Render an SVG sparkline from an array of numeric values")
+  register_tool("compile_gauge_indicator", compile_gauge_indicator, "Render a colour-coded linear gauge bar with dynamic warning thresholds")
+  register_tool("compile_pie_chart",    compile_pie_chart,    "Render an SVG pie chart with percentage labels and legend")
+  register_tool("compile_donut_chart",  compile_donut_chart,  "Render an SVG donut chart with a centre label and legend")
+  register_tool("compile_heatmap",      compile_heatmap,      "Render a CSS grid heatmap with green-to-red intensity colouring")
+  register_tool("compile_scatter_plot", compile_scatter_plot, "Render an SVG scatter plot with labelled axes and optional point labels")
+  register_tool("compile_radar_chart",  compile_radar_chart,  "Render an SVG radar / spider chart from N-axis {label, value} data")
+  register_tool("compile_funnel_chart", compile_funnel_chart, "Render an SVG funnel chart with tapered trapezoid stages")
+  register_tool("compile_candlestick_chart", compile_candlestick_chart, "Render a brutalist SVG candlestick chart from OHLC data points")
+  register_tool("compile_treemap_chart", compile_treemap_chart, "Render a detailed SVG treemap chart using slice-and-dice partitioning")
+
+  let _registry = list_tools()
+  print "📦 visual-charts tool registry loaded —" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+visual_chart_tools()

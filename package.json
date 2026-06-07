@@ -1,6 +1,6 @@
 {
   "name": "webpage-factory",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A Sesi project for building webpages.",
   "main": "dist/index.js",
   "bin": {

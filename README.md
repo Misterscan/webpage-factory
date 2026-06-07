@@ -12,9 +12,11 @@ A self-contained Sesi project for programmatically compiling responsive HTML pag
   * `visual-charts.sesi` - Renders pure HTML/CSS/SVG visual charts (bar, line, scatter, radar, donut, candlestick, treemap) with zero client-side JavaScript.
   * `data-analyzer.sesi` - Dynamic CSV parser and statistics aggregator.
   * `db-helper.sesi` - Flat-file JSON database engine for persistent storage.
-* **`bin/`** - Sesi interpreter CLI executable (`sesi.js`) and compiler linter (`lint.sesi`).
+* **`bin/`** - Sesi interpreter CLI executable (`sesi.js`), compiler linter (`lint.sesi`), and test runner (`test-runner.sesi`).
+* **`chatbot/`** - Contains the built-in Sesi Co-Pilot script (`sesi_db_chatbot.sesi`).
+* **`demo/`** - Contains the dashboard page demo scripts and assets.
 * **`main.sesi`** - Entry point Sesi script.
-* **`index.html`** - Generated webpage output from `main.sesi`.
+* **`index.html`** - Generated webpage output from `main.sesi` (created after running).
 
 ---
 

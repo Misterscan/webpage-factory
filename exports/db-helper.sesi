@@ -2,8 +2,6 @@
 // A lightweight, zero-dependency local flat-file JSON database for Sesi.
 // Enables persistent stateful storage, records querying, paginations, and collection counts.
 
-import {parse} from "std/json"
-
 // Initializes a database flat file if it doesn't already exist
 export fn init_db(dbPath: string) {
   let file_exists = true
@@ -40,7 +38,7 @@ export fn read_db(dbPath: string) {
   } catch (err) {
     print "✗ Failed to read database at:" dbPath
   }
-  return parse(raw)
+  return from_json(raw)
 }
 
 // Writes the database object back to disk
@@ -397,20 +395,35 @@ export fn restore_db(dbPath: string, backupPath: string) {
 
 // ── Tool Definitions ──────────────────────────────────────────────────────────
 
-define_tool("init_db",              init_db,              "Initialize a flat-file JSON database at the given path; creates the file if it does not exist")
-define_tool("read_db",              read_db,              "Read and parse the full database object from disk")
-define_tool("write_db",             write_db,             "Write a database object back to disk as JSON")
-define_tool("insert_record",        insert_record,        "Insert a new record into a collection, auto-generating a unique ID")
-define_tool("find_records",         find_records,         "Find all records in a collection matching a single key-value filter (pass empty string to retrieve all)")
-define_tool("find_records_paginated", find_records_paginated, "Find records with pagination support (limit, offset) and optional key-value filter")
-define_tool("count_records",        count_records,        "Return the total number of records in a collection")
-define_tool("update_record",        update_record,        "Update an existing record by its unique ID with the provided fields")
-define_tool("delete_record",        delete_record,        "Delete a single record from a collection by its unique ID")
-define_tool("find_record_by_id",    find_record_by_id,    "Find a single record by its unique ID; returns null if not found")
-define_tool("find_records_multi",   find_records_multi,   "Find records matching ALL fields in a filters object (AND logic)")
-define_tool("delete_records_where", delete_records_where, "Bulk-delete all records matching a key-value filter; returns the count of deleted records")
-define_tool("sort_records_by",      sort_records_by,      "Return all records in a collection sorted ascending by a string or number field")
-define_tool("list_collections",     list_collections,     "Return an array of all collection names in the database")
-define_tool("drop_collection",      drop_collection,      "Permanently delete an entire collection; returns true if it existed")
-define_tool("backup_db",            backup_db,            "Create a timestamped backup copy of the database file; returns the backup file path")
-define_tool("restore_db",           restore_db,           "Restore a database from a backup file path; returns true on success")
+export fn db_tools() {
+  let tool_refs = {}
+
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
+
+  register_tool("init_db",              init_db,              "Initialize a flat-file JSON database at the given path; creates the file if it does not exist")
+  register_tool("read_db",              read_db,              "Read and parse the full database object from disk")
+  register_tool("write_db",             write_db,             "Write a database object back to disk as JSON")
+  register_tool("insert_record",        insert_record,        "Insert a new record into a collection, auto-generating a unique ID")
+  register_tool("find_records",         find_records,         "Find all records in a collection matching a single key-value filter (pass empty string to retrieve all)")
+  register_tool("find_records_paginated", find_records_paginated, "Find records with pagination support (limit, offset) and optional key-value filter")
+  register_tool("count_records",        count_records,        "Return the total number of records in a collection")
+  register_tool("update_record",        update_record,        "Update an existing record by its unique ID with the provided fields")
+  register_tool("delete_record",        delete_record,        "Delete a single record from a collection by its unique ID")
+  register_tool("find_record_by_id",    find_record_by_id,    "Find a single record by its unique ID; returns null if not found")
+  register_tool("find_records_multi",   find_records_multi,   "Find records matching ALL fields in a filters object (AND logic)")
+  register_tool("delete_records_where", delete_records_where, "Bulk-delete all records matching a key-value filter; returns the count of deleted records")
+  register_tool("sort_records_by",      sort_records_by,      "Return all records in a collection sorted ascending by a string or number field")
+  register_tool("list_collections",     list_collections,     "Return an array of all collection names in the database")
+  register_tool("drop_collection",      drop_collection,      "Permanently delete an entire collection; returns true if it existed")
+  register_tool("backup_db",            backup_db,            "Create a timestamped backup copy of the database file; returns the backup file path")
+  register_tool("restore_db",           restore_db,           "Restore a database from a backup file path; returns true on success")
+
+  let _registry = list_tools()
+  print "📦 db-helper tool registry loaded —" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+db_tools()

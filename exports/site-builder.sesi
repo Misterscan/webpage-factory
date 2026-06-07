@@ -949,25 +949,37 @@ export fn concurrent_build(topics: array<string>, outputDir: string) {
 // Tool Registry — exposes every component as a named callable tool
 // ─────────────────────────────────────────────────────────────────────────────
 
-define_tool("compile_breadcrumb",     compile_breadcrumb,     "Render an accessible breadcrumb nav from an array of {label, url} objects")
-define_tool("compile_toast_strip",    compile_toast_strip,    "Render a notification toast strip from an array of {text, level} messages")
-define_tool("compile_data_table",     compile_data_table,     "Render an HTML data table from headers, rows, and an optional caption")
-define_tool("compile_sticky_sidebar", compile_sticky_sidebar, "Render a sticky sidebar layout with main content and a side panel")
-define_tool("compile_column_text",    compile_column_text,    "Render body text in a CSS multi-column layout (1–6 columns)")
-define_tool("compile_timeline",       compile_timeline,       "Render a chronological timeline feed from an array of {date, title, body} events")
-define_tool("compile_search_bar",     compile_search_bar,     "Render an inline JS-powered search bar that filters elements by class name")
-define_tool("compile_progress_bar",   compile_progress_bar,   "Render an accessible progress indicator bar (0–100%)")
-define_tool("compile_code_block",     compile_code_block,     "Render a collapsible code block with a copy-to-clipboard button")
-define_tool("compile_keybind_bar",    compile_keybind_bar,    "Render a keyboard shortcut hint bar from an array of {keys, action} pairs")
-define_tool("compile_hero_banner",    compile_hero_banner,    "Render a hero banner with title, subtitle, and an optional CTA link")
-define_tool("compile_nav_bar",        compile_nav_bar,        "Render a top navigation bar with a brand name and link array")
-define_tool("compile_accordion",      compile_accordion,      "Render a native HTML accordion from an array of {title, content} items")
-define_tool("compile_carousel",       compile_carousel,       "Render a CSS scroll-snap carousel from an array of {image, title, description} slides")
-define_tool("compile_tabs",           compile_tabs,           "Render a CSS-only tab group from an array of {label, content} objects")
-define_tool("compile_modal",          compile_modal,          "Render a CSS-only modal dialog with checkbox-toggle state")
-define_tool("compile_form_block",     compile_form_block,     "Render an HTML form with labelled fields and a submit button")
-define_tool("generate_seo_metadata",  generate_seo_metadata,  "Generate <meta> SEO tags from a {title, description, keywords, author, image} object")
-define_tool("concurrent_build",       concurrent_build,       "Concurrently build multiple topic pages using multi_req for parallel asset generation")
+export fn site_tools() {
+  let tool_refs = {}
 
-let _registry = list_tools()
-print "📦 site-builder tool registry loaded —" str(len(_registry)) "tools available"
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
+
+  register_tool("compile_breadcrumb",     compile_breadcrumb,     "Render an accessible breadcrumb nav from an array of {label, url} objects")
+  register_tool("compile_toast_strip",    compile_toast_strip,    "Render a notification toast strip from an array of {text, level} messages")
+  register_tool("compile_data_table",     compile_data_table,     "Render an HTML data table from headers, rows, and an optional caption")
+  register_tool("compile_sticky_sidebar", compile_sticky_sidebar, "Render a sticky sidebar layout with main content and a side panel")
+  register_tool("compile_column_text",    compile_column_text,    "Render body text in a CSS multi-column layout (1-6 columns)")
+  register_tool("compile_timeline",       compile_timeline,       "Render a chronological timeline feed from an array of {date, title, body} events")
+  register_tool("compile_search_bar",     compile_search_bar,     "Render an inline JS-powered search bar that filters elements by class name")
+  register_tool("compile_progress_bar",   compile_progress_bar,   "Render an accessible progress indicator bar (0-100%)")
+  register_tool("compile_code_block",     compile_code_block,     "Render a collapsible code block with a copy-to-clipboard button")
+  register_tool("compile_keybind_bar",    compile_keybind_bar,    "Render a keyboard shortcut hint bar from an array of {keys, action} pairs")
+  register_tool("compile_hero_banner",    compile_hero_banner,    "Render a hero banner with title, subtitle, and an optional CTA link")
+  register_tool("compile_nav_bar",        compile_nav_bar,        "Render a top navigation bar with a brand name and link array")
+  register_tool("compile_accordion",      compile_accordion,      "Render a native HTML accordion from an array of {title, content} items")
+  register_tool("compile_carousel",       compile_carousel,       "Render a CSS scroll-snap carousel from an array of {image, title, description} slides")
+  register_tool("compile_tabs",           compile_tabs,           "Render a CSS-only tab group from an array of {label, content} objects")
+  register_tool("compile_modal",          compile_modal,          "Render a CSS-only modal dialog with checkbox-toggle state")
+  register_tool("compile_form_block",     compile_form_block,     "Render an HTML form with labelled fields and a submit button")
+  register_tool("generate_seo_metadata",  generate_seo_metadata,  "Generate <meta> SEO tags from a {title, description, keywords, author, image} object")
+  register_tool("concurrent_build",       concurrent_build,       "Concurrently build multiple topic pages using multi_req for parallel asset generation")
+
+  let _registry = list_tools()
+  print "📦 site-builder tool registry loaded —" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+site_tools()
