@@ -1,6 +1,8 @@
-// db-helper.sesi
-// A lightweight, zero-dependency local flat-file JSON database for Sesi.
-// Enables persistent stateful storage, records querying, paginations, and collection counts.
+/*
+  Database Helper
+  A lightweight, zero-dependency local flat-file JSON database for Sesi.
+  Enables persistent stateful storage, records querying, paginations, and collection counts.
+*/
 
 // Initializes a database flat file if it doesn't already exist
 export fn init_db(dbPath: string) {
@@ -190,9 +192,11 @@ export fn delete_record(dbPath: string, collection: string, id: string) {
   return deleted
 }
 
-// ── Advanced Querying ─────────────────────────────────────────────────────────
+/*
+  ── Advanced Querying ─────────────────────────────────────────────────────────
 
-// Finds a single record by its unique ID; returns null if not found
+  Finds a single record by its unique ID; returns null if not found
+*/
 export fn find_record_by_id(dbPath: string, collection: string, id: string) {
   let db = read_db(dbPath)
   let cols = db["collections"]
@@ -212,8 +216,10 @@ export fn find_record_by_id(dbPath: string, collection: string, id: string) {
   return found
 }
 
-// Finds records matching ALL supplied key-value pairs (AND logic)
-// filters is an object e.g. {"status": "active", "type": "page"}
+/*
+  Finds records matching ALL supplied key-value pairs (AND logic)
+  filters is an object e.g. {"status": "active", "type": "page"}
+*/
 export fn find_records_multi(dbPath: string, collection: string, filters: object) {
   let db = read_db(dbPath)
   let cols = db["collections"]
@@ -299,9 +305,11 @@ export fn sort_records_by(dbPath: string, collection: string, field: string) {
   return records
 }
 
-// ── Collection Management ─────────────────────────────────────────────────────
+/*
+  ── Collection Management ─────────────────────────────────────────────────────
 
-// Returns a list of all collection names in the database
+  Returns a list of all collection names in the database
+*/
 export fn list_collections(dbPath: string) {
   let db = read_db(dbPath)
   let cols = db["collections"]
@@ -330,9 +338,11 @@ export fn drop_collection(dbPath: string, collection: string) {
   return true
 }
 
-// ── Backup & Restore ──────────────────────────────────────────────────────────
+/*
+  ── Backup & Restore ──────────────────────────────────────────────────────────
 
-// Creates a timestamped backup of the database file; returns the backup file path
+  Creates a timestamped backup of the database file; returns the backup file path
+*/
 export fn backup_db(dbPath: string) {
   let raw = ""
   let read_ok = true

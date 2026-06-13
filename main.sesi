@@ -58,4 +58,3 @@ try {
 } catch (err) {
   print "✗ Failed to write index.html:" err
 }
-

@@ -4,9 +4,11 @@ import {compile_bar_chart, compile_sparkline, compile_gauge_indicator, compile_p
 import {generate_page, compile_nav_bar, compile_hero_banner, compile_keybind_bar, compile_accordion, compile_breadcrumb, compile_search_bar, compile_progress_bar, generate_seo_metadata} from "exports/site-builder"
 
 print "=== Webpage Factory Demo Build Started ==="
+
 // ── 1. Stateful Database Integration ──────────────────────────────────────────
 let db = "demo/dashboard_db.json"
 init_db(db)
+
 // Add metrics data logs to database if empty
 let entries_count = count_records(db, "logs")
 if entries_count == 0 {
@@ -21,19 +23,27 @@ if entries_count == 0 {
   insert_record(db, "logs", {"metric": "memory", "val": 75, "env": "staging"})
   insert_record(db, "logs", {"metric": "memory", "val": 40, "env": "development"})
 }
+
 // Query all logs and sort by numerical field "val"
 let all_logs = find_records_multi(db, "logs", {})
 let sorted_logs = sort_records_by(db, "logs", "val")
 let cols = list_collections(db)
+
 // Backup the database
 let db_backup = backup_db(db)
-// ── 2. Data Analytics Integration ─────────────────────────────────────────────
-// Raw performance CSV data (response times in ms, error rates in %)
+
+/*
+  ── 2. Data Analytics Integration ─────────────────────────────────────────────
+  Raw performance CSV data (response times in ms, error rates in %)
+*/
 let raw_csv = "metric,value,env\nlatency,90,production\nlatency,320,staging\nlatency,110,production\nlatency,600,production\nlatency,80,development\nmemory,65,production\nmemory,82,staging\nmemory,45,development\ncpu,30,production\ncpu,92,staging\ncpu,15,development"
 let parsed_metrics = parse_csv(raw_csv)
 print "CSV Performance Records Parsed:" len(parsed_metrics)
-// Compute analytical metrics
-// We calculate stats on response times (latency) using our new analytical library
+
+/*
+  Compute analytical metrics
+  We calculate stats on response times (latency) using our new analytical library
+*/
 let latency_records = []
 for m in parsed_metrics {
   if m["metric"] == "latency" {
@@ -55,20 +65,24 @@ print "  Min:" min_latency "ms"
 print "  Median:" med_latency "ms"
 print "  Mode:" mode_latency "ms"
 print "  Std Dev:" sd_latency
+
 // Run Group By env
 let grouped_by_env = group_by(parsed_metrics, "env")
 let env_keys = keys(grouped_by_env)
+
 // Perform schema and data validations
 let schema_violations = validate_records(parsed_metrics, ["metric", "value", "env"])
 let bad_numeric_indices = validate_numeric_field(parsed_metrics, "value")
 print "Telemetry Validation Results:"
 print "  Schema violations count:" len(schema_violations)
 print "  Bad numeric records count:" len(bad_numeric_indices)
+
 // Export data into multiple serialization formats
 let csv_export = export_to_csv(parsed_metrics, ["metric", "value", "env"])
 let json_export = export_to_json(parsed_metrics)
 let excel_export = export_to_excel_xml(parsed_metrics, ["metric", "value", "env"])
 let word_export = export_to_word_xml(parsed_metrics, ["metric", "value", "env"])
+
 // Write output export files to disk
 try {
   write_file("demo/telemetry.csv", csv_export)
@@ -78,23 +92,29 @@ try {
 } catch (err) {
   print "✗ Failed to write exports to disk:" err
 }
-// ── 3. Visual Charts Rendering ────────────────────────────────────────────────
-// Bar Chart of environment metric counts
+
+/*
+  ── 3. Visual Charts Rendering ────────────────────────────────────────────────
+  Bar Chart of environment metric counts
+*/
 let env_counts = []
 for k in env_keys {
   let count = len(grouped_by_env[k])
   push(env_counts, {"label": k, "value": count * 20}) // scaled to show nicely
 }
 let bar_chart_html = compile_bar_chart(env_counts, "Environments Density Index (scaled)")
+
 // Sparkline (Upgraded detailed Line Chart) of Latency values
 let sparkline_values = []
 for m in latency_records {
   push(sparkline_values, m["value"] - 0)
 }
 let sparkline_html = compile_sparkline(sparkline_values, "Response Latency Trend (ms)")
+
 // Gauge Indicator showing CPU utilization
 let current_cpu_val = 67
 let gauge_html = compile_gauge_indicator(current_cpu_val, 0, 100, "Global Node Load Factor")
+
 // Pie Chart showing Env Allocation distribution
 let allocation_data = [
   {"label": "Production", "value": 55},
@@ -102,6 +122,7 @@ let allocation_data = [
   {"label": "Development", "value": 15}
 ]
 let pie_chart_html = compile_pie_chart(allocation_data, "Core Clusters Allocation (%)")
+
 // Candlestick Chart (Telemetry Interval Ranges)
 let candlestick_data = [
   {"label": "09:00", "open": 100, "high": 250, "low": 80, "close": 120},
@@ -111,6 +132,7 @@ let candlestick_data = [
   {"label": "13:00", "open": 105, "high": 180, "low": 70, "close": 85}
 ]
 let candlestick_html = compile_candlestick_chart(candlestick_data, "Server Latency OHLC Spreads (ms)")
+
 // Treemap Chart (Storage usage distribution)
 let treemap_data = [
   {"label": "Database Logs", "value": 450},
@@ -120,6 +142,7 @@ let treemap_data = [
   {"label": "System Backups", "value": 80}
 ]
 let treemap_html = compile_treemap_chart(treemap_data, "Disk Storage Footprint (MB)")
+
 // ── 4. Dashboard Assembly (Using site-builder) ───────────────────────────────
 let nav_links = [
   {"label": "Dashboard Home", "url": "#"},
@@ -136,6 +159,7 @@ let crumbs = [
 ]
 let breadcrumb_html = compile_breadcrumb(crumbs)
 let search_bar_html = compile_search_bar("bar-row", "Filter by node/environment...")
+
 // Construct main stats overview via Bento Grid items
 let bento_items = [
   {
@@ -170,6 +194,7 @@ for item in bento_items {
   bento_grid_html = bento_grid_html + "  </div>\n"
 }
 bento_grid_html = bento_grid_html + "</div>"
+
 // Compile table displaying database logs
 let log_headers = ["ID", "Metric Key", "Value", "Environment"]
 let log_rows = []
@@ -192,6 +217,7 @@ for row in log_rows {
   table_html = table_html + "      </tr>\n"
 }
 table_html = table_html + "    </tbody>\n  </table>\n</div>"
+
 // Accordion detailing raw database backups
 let accordion_items = [
   {
@@ -204,6 +230,7 @@ let accordion_items = [
   }
 ]
 let accordion_html = compile_accordion(accordion_items)
+
 // Progress bars for resource metrics
 let cpu_progress = compile_progress_bar("Core Processors (CPU) load", current_cpu_val)
 let mem_progress = compile_progress_bar("Cluster Memory Allocation", 74)
@@ -213,21 +240,25 @@ let keybind_hints = [
   {"keys": "ALT + X", "action": "Export to SpreadsheetML"}
 ]
 let keybind_html = compile_keybind_bar(keybind_hints)
+
 // Assemble final page content
 let main_content = ""
 main_content = main_content + breadcrumb_html
 main_content = main_content + "<h2 style='border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-top: 0;'>SYSTEM STATUS</h2>"
 main_content = main_content + bento_grid_html
+
 // Row 1: Horizontal Bar Chart + Pie Chart
 main_content = main_content + "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 30px 0;'>\n"
 main_content = main_content + "  <div>\n" + bar_chart_html + "\n  </div>\n"
 main_content = main_content + "  <div>\n" + pie_chart_html + "\n  </div>\n"
 main_content = main_content + "</div>\n"
+
 // Row 2: Upgraded Line Chart + Gauge Metric
 main_content = main_content + "<div style='display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin: 30px 0;'>\n"
 main_content = main_content + "  <div>\n" + sparkline_html + "\n  </div>\n"
 main_content = main_content + "  <div>\n" + gauge_html + "\n    <div style='margin-top: 20px;'>" + cpu_progress + mem_progress + "</div>\n  </div>\n"
 main_content = main_content + "</div>\n"
+
 // Row 3: New Advanced Candlestick Chart + Treemap Chart
 main_content = main_content + "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 30px 0;'>\n"
 main_content = main_content + "  <div>\n" + candlestick_html + "\n  </div>\n"
@@ -238,6 +269,7 @@ main_content = main_content + table_html
 main_content = main_content + "<h2 style='border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-top: 40px;'>DOCUMENTATION</h2>"
 main_content = main_content + accordion_html
 main_content = main_content + keybind_html
+
 // Render full index.html page
 let final_html = generate_page("Webpage Factory Demo Dashboard", main_content)
 try {

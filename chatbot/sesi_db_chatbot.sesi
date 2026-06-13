@@ -1,19 +1,17 @@
-// sesi_db_chatbot.sesi
-// Dynamically indexes the sesi-db knowledge base, trains on-the-fly, and answers queries!
+/*
+  sesi_db_chatbot.sesi
+  Dynamically indexes the sesi-db knowledge base, trains on-the-fly, and answers queries! 
+*/
 
-// ==================================================
-// 💬 1. CHOOSE YOUR ADVANCED TECHNICAL QUERY HERE!
-let queryText = "how do i make a website with multiple pages?"
+/* 
+  ==================================================
+  💬 1. CHOOSE YOUR ADVANCED TECHNICAL QUERY HERE!
+  (Test it with custom phrases containing our keywords!) 
+*/
+let queryText = "how do I convert an image and display it through my web server?"
 if len(args) > 0 {
   queryText = join(args, " ")
-} else {
-  try {
-    queryText = read_file(".ai-ignore/query.txt")
-  } catch (e) {
-    // Fallback if file is empty/missing
-  }
 }
-
 let fileContext = ""
 try {
   fileContext = read_file(".ai-ignore/help_context.txt")
@@ -32,12 +30,14 @@ fn derivative(y) {
   return y * (1.0 - y)
 }
 
-// 72-Dimensional Bag-of-Words Vocabulary Vectorizer
-// Tracks only official Sesi language keywords, compiler builtins, and native standard library exports.
+/* 
+  74-Dimensional Bag-of-Words Vocabulary Vectorizer
+  Tracks only official Sesi language keywords, compiler builtins, and native standard library exports. 
+*/
 fn vectorize(text) {
   let vec = []
   let k = 0
-  while k < 72 {
+  while k < 74 {
     push(vec, 0.0)
     k = k + 1
   }
@@ -172,12 +172,14 @@ fn vectorize(text) {
     if tok == "web_send" { vec[69] = 1.0 }
     if tok == "listen" { vec[70] = 1.0 }
     if tok == "convert" { vec[71] = 1.0 }
+    if tok == "prompt" { vec[72] = 1.0 }
+    if tok == "api" { vec[73] = 1.0 }
     i = i + 1
   }
   return vec
 }
 
-let trained_model_path = ".ai-ignore/sesi-db/trained_brain.json"
+let trained_model_path = "sesi-db/trained_brain.json"
 let has_trained_model = false
 let weights = []
 let biases = []
@@ -203,7 +205,7 @@ try {
     let sum = 0.0
     let w_row = weights[j]
     let k = 0
-    while k < 72 {
+    while k < 74 {
       sum = sum + (query_vec[k] * w_row[k])
       k = k + 1
     }
@@ -228,46 +230,26 @@ try {
   print "--------------------------------------------------"
   print "🤖 SESI IS THINKING:"
   print "--------------------------------------------------"
-  let rec = {"summary": "No match found", "key_rules": ""}
-  let sesiDocs = ""
   if max_score < 0.40 {
     print "   Please ask again."
   } else {
-    rec = database[best_class]
-    let docs_list = list_dir(".ai-ignore/refs")
+    let rec = database[best_class]
+    let docs_list = ["BUILTINS.md", "CLI.md", "IMAGE_GENERATION.md", "SPECIFICATION.md", "WRITING_SCRIPTS.md"]
+    let sesiDocs = ""
     let d = 0
     while d < len(docs_list) {
       let f_name = docs_list[d]
-      let parts = split(f_name, ".")
-      let ext = parts[len(parts) - 1]
-      
-      if ext == "md" {
-        try {
-          let doc_content = read_file(".ai-ignore/refs/" + f_name)
-          sesiDocs = sesiDocs + "\n\n=== DOCUMENT: " + f_name + " ===\n" + doc_content
-        } catch (e) {}
-      }
+      let doc_content = read_file("docs/" + f_name)
+      sesiDocs = sesiDocs + "\n\n=== DOCUMENT: " + f_name + " ===\n" + doc_content
       d = d + 1
     }
+    
+    let skills = read_file("SKILLS.md")
+    let instructions = "Instructions: " + skills + " If Active File Context is present, use it directly and talk about that file concretely. Be helpful and robust. Do NOT invent syntax. Use the correct `/*\nMulti-line\nComment\n*/` style for multi-line comments. Do not mention that you got this from a database. Do not ask follow up questions. You are not in an interactive chat session with the user. CRITICAL: Unless the User Query explicitly names them, you are FORBIDDEN from using or mentioning model(), image(), write_image(), or workflow() in your code examples or explanation. Instead, show how to solve the user's query programmatically using native Sesi primitives (such as variables, loops, functions, lists, and standard file/HTTP/JSON builtins)."
+    let ragPrompt = "Sesi Official Reference Documentation:\n" + sesiDocs + "\n\nUser Query: " + queryText + "\n\nActive File Context:\n" + fileContext + "\n\nMatched Context from Sesi DB:\nSummary: " + rec["summary"] + "\nKey Rules: " + rec["key_rules"]
+    let persona = "Your name is Sesi Co-Pilot. You are an expert in Sesi and very efficient at coding. You prefer an original way of doing things. "
+    let generated_response = model("gemini-3.1-flash-lite") {thinkingLevel: "low", max_tokens: 4096} {instructions ragPrompt persona}
+    
+    let helpResponse = write_file("help_response.md", "# Help Response:\n\n" + generated_response)
+    print "The Sesi Co-Pilot has provided a response to your question. Check help_response.md"
   }
-  let webpage_modules = ""
-  try {
-    let exports_list = list_dir("exports")
-    let e_idx = 0
-    while e_idx < len(exports_list) {
-      let e_file = exports_list[e_idx]
-      let e_content = read_file("exports/" + e_file)
-      webpage_modules = webpage_modules + "\n\n=== MODULE: " + e_file + " ===\n" + e_content
-      e_idx = e_idx + 1
-    }
-  } catch (err) {}
-
-  let instructions = "Instructions: sesi compile is not a command. If Active File Context is present, use it directly and talk about that file concretely. Be helpful and robust. Show code examples. Do NOT invent syntax. ALWAYS use the 'exports/' prefix for imports (e.g. import {...} from \"exports/...\"). If you do not see it represented in the .sesi code examples or documentation, it is NOT the syntax. Do not ask follow up questions."
-  let ragPrompt = "Sesi Official Reference Documentation:\n" + sesiDocs + "\n\nSesi Module Source Code (USE THESE FUNCTIONS):\n" + webpage_modules + "\n\nUser Query: " + queryText + "\n\nActive File Context:\n" + fileContext + "\n\nMatched Context from Sesi DB:\nSummary: " + rec["summary"] + "\nKey Rules: " + rec["key_rules"]
-  let persona = "SYSTEM PERSONA: Your name is Sesi Co-Pilot."
-  let cacheBuster = "Current Process Time: " + str(time())
-  let generated_response = model("gemini-3.1-flash-lite") {temperature: 0.1, max_tokens: 2048} {ragPrompt persona instructions cacheBuster}
-  
-  let helpResponse = write_file("help_response.md", "# Help Response:\n\n" + generated_response)
-  print "The Sesi Co-Pilot has provided a response to your question. Check help_response.md"
-

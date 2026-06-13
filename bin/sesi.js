@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 require('@dotenvx/dotenvx').config();
+delete process.env.PKG_EXECPATH;
 const { runSesiFile, runSesi } = require('../node_modules/@misterscan/sesi/dist/index.js');
 const fs = require('fs');
 const path = require('path');
@@ -7,12 +8,13 @@ const path = require('path');
 const args = process.argv.slice(2);
 
 const argsHeader = `
-Sesi Programming Language v1.5.1
+Sesi Programming Language v1.5.3
 
 Usage:
   sesi <file> [options] <args>  Run a Sesi program
   sesi -e "code"         Evaluate Sesi code directly
   sesi -h <query>        Ask for help from our Sesi Co-Pilot
+  sesi --studio          Launch Sesi Studio IDE
   sesi --repl            Start interactive Sesi REPL
   sesi -v                Show version
   sesi -enc <file> -p <password>   Encrypt a file
@@ -30,6 +32,7 @@ Usage:
   -v, --version          Show version
   -h, --help             Show this help
   -r, --raw              Show the raw parser output
+  -s, --studio           Launch Sesi Studio IDE
   -c, --check, --dry     Perform a dry-run syntax check without executing
 
 Examples:
@@ -53,6 +56,7 @@ function parseArgs(args) {
     decryptFile: null,
     password: null,
     repl: false,
+    studio: false,
     sesiOptions: {
       safeMode: true,
       allowedPaths: [process.cwd()],
@@ -66,7 +70,7 @@ function parseArgs(args) {
     const isHelpFlag = arg === '--help' || arg === '-help' || arg === '-h';
 
     if (arg === '-v' || arg === '--version') {
-      console.log('Sesi v1.5.1');
+      console.log('Sesi v1.5.3');
       process.exit(0);
     } else if (isHelpFlag && i === 0 && !options.file && !options.eval) {
       if (args[i + 1] && !args[i + 1].startsWith('-')) {
@@ -96,7 +100,7 @@ function parseArgs(args) {
     } else if (arg === '-a' || arg === '--allowed-paths') {
       const paths = args[++i].split(',');
       options.sesiOptions.allowedPaths.push(...paths.map(p => path.resolve(p)));
-    } else if (!arg.startsWith('-') && !options.file && !options.eval && !options.encryptFile && !options.decryptFile) {
+    } else if ((!arg.startsWith('-') || arg === '-') && !options.file && !options.eval && !options.encryptFile && !options.decryptFile) {
       options.file = arg;
     } else if (arg == '-r' || arg == '--raw') {
       options.sesiOptions.raw = true;
@@ -106,8 +110,10 @@ function parseArgs(args) {
       options.sesiOptions.tokens = true;
     } else if (arg === '-c' || arg === '--check' || arg === '--dry') {
       options.sesiOptions.dry = true;
-    } else if (arg == '--repl') {
+    } else if (arg === '--repl') {
       options.repl = true;
+    } else if (arg === '--studio' || arg === '-s') {
+      options.studio = true;
     }
   }
 
@@ -128,11 +134,11 @@ function parseArgs(args) {
 
 async function startRepl() {
   const readline = require('readline');
-  const { Lexer, Parser, Interpreter } = require('../node_modules/@misterscan/sesi/dist/index.js');
+  const { Lexer, Parser, Interpreter } = require('../dist/index.js');
 
   const interpreter = new Interpreter(process.cwd(), parsed.sesiOptions);
 
-  console.log('Sesi Interactive REPL (v1.5.1)');
+  console.log('Sesi Interactive REPL (v1.5.3)');
   console.log('Type ".exit" or press Ctrl+C to exit.');
 
   const rl = readline.createInterface({
@@ -181,6 +187,18 @@ async function startRepl() {
 const parsed = parseArgs(args);
 
 async function main() {
+  if (parsed.studio) {
+    const studioServerPath = path.join(__dirname, '..', 'sesi-studio', 'studio.sesi');
+    if (fs.existsSync(studioServerPath)) {
+      console.log('Launching Sesi Studio...');
+      require(studioServerPath);
+    } else {
+      console.error('Error: Sesi Studio backend not found at ' + studioServerPath);
+      process.exit(1);
+    }
+    return;
+  }
+
   if (parsed.repl || (!parsed.file && !parsed.eval && !parsed.helpQuery && !parsed.encryptFile && !parsed.decryptFile)) {
     if (parsed.repl || process.stdin.isTTY) {
       await startRepl();

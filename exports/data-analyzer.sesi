@@ -1,6 +1,8 @@
-// data-analyzer.sesi
-// Dynamic CSV data parser and analytical aggregator.
-// Enables tabular spreadsheet processing, statistical operations, and collection sorting.
+/*
+  Data Analyzer
+  Dynamic CSV data parser and analytical aggregator.
+  Enables tabular spreadsheet processing, statistical operations, and collection sorting.
+*/
 
 // Parses CSV string content into an array of mapped JSON record objects
 export fn parse_csv(csvText: string) -> array {
@@ -40,6 +42,7 @@ export fn parse_csv(csvText: string) -> array {
 // Converts a list of record objects back into a standard formatted CSV string
 export fn export_to_csv(records: array, fieldsList: array) -> string {
   let csv = ""
+
   // Headers row
   let idx = 0
   while idx < len(fieldsList) {
@@ -168,9 +171,11 @@ fn newton_sqrt(x: number) {
   return guess
 }
 
-// ── Advanced Analytics ────────────────────────────────────────────────────────
+/* 
+  ── Advanced Analytics ────────────────────────────────────────────────────────
 
-// Computes the sum of a numerical field across all records
+  Computes the sum of a numerical field across all records
+*/
 export fn compute_sum(records: array, key: string) -> number {
   let total = 0.0
   for rec in records {
@@ -286,10 +291,12 @@ export fn pluck(records: array, key: string) -> array {
   return out
 }
 
-// ── Data Validation ───────────────────────────────────────────────────────────
+/* 
+  ── Data Validation ───────────────────────────────────────────────────────────
 
-// Validates that every record contains all required fields.
-// Returns an array of {index, missing} objects for each invalid record (empty array = all valid).
+  Validates that every record contains all required fields.
+  Returns an array of {index, missing} objects for each invalid record (empty array = all valid).
+*/
 export fn validate_records(records: array, requiredFields: array) -> array {
   let invalid = []
   let idx = 0
@@ -309,8 +316,10 @@ export fn validate_records(records: array, requiredFields: array) -> array {
   return invalid
 }
 
-// Checks that a specific field's value across all records is a valid number.
-// Returns an array of indices where the field is not numeric (or missing).
+/* 
+  Checks that a specific field's value across all records is a valid number.
+  Returns an array of indices where the field is not numeric (or missing).
+*/
 export fn validate_numeric_field(records: array, key: string) -> array {
   let bad_indices = []
   let idx = 0
@@ -322,6 +331,7 @@ export fn validate_numeric_field(records: array, key: string) -> array {
     }
     if is_num {
       let coerced = val - 0
+
       // NaN != NaN is always true — reliable NaN detection without sqrt/isNaN
       if coerced != coerced {
         is_num = false
@@ -335,9 +345,11 @@ export fn validate_numeric_field(records: array, key: string) -> array {
   return bad_indices
 }
 
-// ── Conversion Utilities ──────────────────────────────────────────────────────
+/* 
+  ── Conversion Utilities ──────────────────────────────────────────────────────
 
-// Serializes a records array to a JSON string
+  Serializes a records array to a JSON string
+*/
 export fn export_to_json(records: array) -> string {
   return to_json(records)
 }

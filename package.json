@@ -1,8 +1,8 @@
 {
   "name": "webpage-factory",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Sesi project for building webpages.",
-  "main": "dist/index.js",
+  "main": "node_modules/@misterscan/sesi/dist/index.js",
   "bin": {
     "sesi": "bin/sesi.js"
   },
@@ -21,10 +21,7 @@
     "server": "sesi server.sesi -l"
   },
   "dependencies": {
-    "@misterscan/sesi": "1.5.1"
-  },
-  "devDependencies": {
-    "@misterscan/sesi": "1.5.1"
+    "@misterscan/sesi": "1.5.3"
   },
   "keywords": [
     "sesi",

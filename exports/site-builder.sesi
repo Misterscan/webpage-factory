@@ -1,6 +1,8 @@
-// Sesi Native Webpage Generator 
-// Combine the local webpage generation with minimal to no Reasoning features to save on token costs!
-// Exports for quick website templates
+/*
+  Sesi Native Webpage Generator 
+  Combine the local webpage generation with minimal to no Reasoning features to save on token costs!
+  Exports for quick website templates
+*/
 
 export fn create_header(title: string) {
   return "<!DOCTYPE html>\n<html>\n<head>\n<meta charset='utf-8'>\n<meta name='viewport' content='width=device-width, initial-scale=1'>\n<title>" + title + "</title>\n<link rel='stylesheet' href='theme.css'>\n<link rel='stylesheet' href='layout.css'>\n<link rel='stylesheet' href='style.css'>\n<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap'>\n<script src='https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js'></script>\n<script>mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { pieTitleTextColor: '#ffffff', pieSectionTextColor: '#ffffff', pieLegendTextColor: '#ffffff', pieLabelTextColor: '#ffffff', primaryTextColor: '#ffffff' } });</script>\n</head>\n<body>\n<div class='container'>"
@@ -610,9 +612,11 @@ export fn generate_seo_metadata(meta: object) {
   return tags
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Error Handling & Input Validation Utilities
-// ─────────────────────────────────────────────────────────────────────────────
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Error Handling & Input Validation Utilities
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 
 export fn assert_string(value: string, label: string) {
   if type(value) != "string" {
@@ -645,7 +649,6 @@ export fn assert_number(value: number, label: string, min: number, max: number) 
 }
 
 // Validated wrappers — drop-in replacements for the core builders with guarded inputs
-
 export fn safe_save_page(filename: string, title: string, content: string) {
   try {
     assert_string(filename, "filename")
@@ -684,9 +687,11 @@ export fn safe_embed_media(path: string, mediaType: string) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Layout Components
-// ─────────────────────────────────────────────────────────────────────────────
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Layout Components
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 
 // Breadcrumb trail — crumbs: array<object> with keys "label" and "url"
 export fn compile_breadcrumb(crumbs: array<object>) {
@@ -794,9 +799,11 @@ export fn compile_column_text(body: string, columns: number) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Interactivity Components
-// ─────────────────────────────────────────────────────────────────────────────
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Interactivity Components
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 
 // Timeline feed — events: array<object> with keys "date", "title", "body"
 export fn compile_timeline(events: array<object>) {
@@ -911,9 +918,11 @@ export fn compile_keybind_bar(shortcuts: array<object>) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Concurrent Page Builder (multi_req)
-// ─────────────────────────────────────────────────────────────────────────────
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Concurrent Page Builder (multi_req)
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 
 // Builds multiple topic pages concurrently using multi_req, writing each to outputDir/<topic>/index.html
 export fn concurrent_build(topics: array<string>, outputDir: string) {
@@ -925,6 +934,7 @@ export fn concurrent_build(topics: array<string>, outputDir: string) {
     for topic in topics {
       let dir = outputDir + "/" + topic
       make_dir(dir)
+
       // Write a self-contained worker script for this topic, then spawn it
       let workerPath = outputDir + "/_worker_" + topic + ".sesi"
       let workerScript = "import {generateWebpageAssets} from \"site-builder\"\n"
@@ -945,9 +955,11 @@ export fn concurrent_build(topics: array<string>, outputDir: string) {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tool Registry — exposes every component as a named callable tool
-// ─────────────────────────────────────────────────────────────────────────────
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Tool Registry — exposes every component as a named callable tool
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 
 export fn site_tools() {
   let tool_refs = {}

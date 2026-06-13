@@ -1,0 +1,101 @@
+import {format, now} from "std/time"
+
+/*
+  Convert the current date/time into a local readable format:
+  We use keywords here for ease of access and common understanding
+*/
+
+export fn getDate(dateStyle: string) {
+  let numerical = "short"
+  let with_letters = "medium"
+
+  if dateStyle == "num" {
+    dateStyle = numerical
+  }
+  if dateStyle == "name" {
+    dateStyle = with_letters
+  }
+
+  let timestamp = format(now(), {"locale": "en-US", "dateStyle": dateStyle})
+  return timestamp
+}
+
+export fn localTime(timeStyle: string) {
+  let compacted = "short"
+  let milliseconds = "medium"
+  let verbose = "full"
+
+  if timeStyle == "basic" {
+    timeStyle = compacted
+  }
+  if timeStyle == "in_ms" {
+    timeStyle = milliseconds
+  }
+  if timeStyle == "detailed" {
+    timeStyle = verbose
+  }
+
+  let timestamp = format(now(), {"locale": "en-US", "timeStyle": timeStyle})
+  return timestamp
+}
+
+/* 
+  Convert the current time into a universal readable format
+    Note: It's currently preset to "short" timeStyle only for issues with date formatting appearing with other options.
+*/
+export fn universalTime(timeStyle: string) {
+  let timestamp = format(now(), {"timeZone": "UTC", "timeStyle": "short"})
+  return timestamp
+}
+
+/* 
+  Format the time for use when saving files in your scripts
+  Very helpful for automated workflows that would otherwise overwrite
+  Also helps with bookkeeping
+*/
+export fn formattedTime() {
+  let timeRef = localTime("in_ms")
+  let preFix = split(timeRef, " ")
+  let fixed = join(preFix, "-")
+  return fixed
+}
+
+// Define the tools for easy calling in your scripts
+export fn time_tools() {
+  let tool_refs = {}
+
+  fn register_tool(name: string, func, desc: string) {
+    define_tool(name, func, desc)
+    tool_refs[name] = desc
+  }
+
+/*
+  Register the tools for easy calls within your scripts
+*/
+  register_tool("getDate",       getDate,       "Get current date")
+  register_tool("localTime",     localTime,     "Get local time")
+  register_tool("universalTime", universalTime, "Get universal time")
+  register_tool("formattedTime", formattedTime, "Get formatted time")
+
+  let _registry = list_tools()
+  print "⏱️ timestamp tool registry loaded —" str(len(_registry)) "tools available"
+  print to_json(tool_refs)
+}
+
+/*
+  Example usage:
+    You can use these in your script easily.
+    Just import {localTime, universalTime, or formattedTime} from "timestamp"
+    - `basic` reads out `12:00 PM`
+    - `in_ms` reads out `12:00:00 PM`
+    - `detailed` reads out `12:00:00 PM Eastern Daylight Time`
+
+    time_tools()
+    let local = localTime("basic")
+    let universal = universalTime()
+    let formatted = formattedTime()
+
+    print "Current time:" local
+    print "Current time (UTC):" universal
+    print "Formatted time:" formatted
+*/

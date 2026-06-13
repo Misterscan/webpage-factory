@@ -1,6 +1,8 @@
-// Sesi Native Brutalist Visual Charting Engine
-// Generates stunning, pure HTML/CSS/SVG charts with zero client-side JS.
-// Perfect for high-density, low-latency static dashboard rendering.
+/*
+  Sesi Native Brutalist Visual Charting Engine
+  Generates stunning, pure HTML/CSS/SVG charts with zero client-side JS.
+  Perfect for high-density, low-latency static dashboard rendering.
+*/
 
 export fn compile_bar_chart(data, chartTitle) {
   let html = "<div class='brutalist-chart-card'>\n"
@@ -29,6 +31,7 @@ export fn compile_sparkline(values, chartTitle) {
   
   let count = len(values)
   if count > 0 {
+
     // Find min and max for scaling
     let maxVal = values[0]
     let minVal = values[0]
@@ -42,9 +45,11 @@ export fn compile_sparkline(values, chartTitle) {
       spread = 1
     }
     
-    // SVG viewBox="0 0 400 180"
-    // Margins: Left=45, Right=15, Top=15, Bottom=25
-    // Graph Area: Width = 340, Height = 140
+    /* 
+      SVG viewBox="0 0 400 180"
+      Margins: Left=45, Right=15, Top=15, Bottom=25
+      Graph Area: Width = 340, Height = 140
+    */
     let width = 340
     let height = 140
     let leftMargin = 45
@@ -65,6 +70,7 @@ export fn compile_sparkline(values, chartTitle) {
     let g = 0
     while g <= grid_lines {
       let gy = topMargin + g * (height / grid_lines)
+
       // Grid line
       html = html + "      <line x1='" + str(leftMargin) + "' y1='" + str(gy) + "' x2='" + str(leftMargin + width) + "' y2='" + str(gy) + "' stroke='#1f1f2e' stroke-width='1' stroke-dasharray='3,3' />\n"
       
@@ -107,6 +113,7 @@ export fn compile_sparkline(values, chartTitle) {
       
       // Dot shadow / glow circle
       html = html + "      <circle cx='" + str(x) + "' cy='" + str(y) + "' r='6' fill='#00ff66' fill-opacity='0.25' />\n"
+      
       // Main dot
       html = html + "      <circle cx='" + str(x) + "' cy='" + str(y) + "' r='3' fill='#00ff66' stroke='#ffffff' stroke-width='1' />\n"
       
@@ -165,18 +172,19 @@ export fn compile_gauge_indicator(value, minVal, maxVal, label) {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pie / Donut Charts  (SVG arc path, pure math via pre-built segment table)
-// ─────────────────────────────────────────────────────────────────────────────
-// data: array<object> with keys "label" and "value" (raw, not %)
-// Internally converts to percentages and draws one <path> arc per slice.
-//
-// SVG arc helper — returns "x,y" string for a point on a unit circle.
-// angle in degrees, cx/cy = centre, r = radius.
-// We do the trig by decomposing into an 8-point approximation table.
+/* 
+  ─────────────────────────────────────────────────────────────────────────────
+  Pie / Donut Charts  (SVG arc path, pure math via pre-built segment table)
+  ─────────────────────────────────────────────────────────────────────────────
+  data: array<object> with keys "label" and "value" (raw, not %)
+  Internally converts to percentages and draws one <path> arc per slice.
+  SVG arc helper — returns "x,y" string for a point on a unit circle.
+  angle in degrees, cx/cy = centre, r = radius.
+  We do the trig by decomposing into an 8-point approximation table.
 
-// Returns {x, y} on a circle of given radius centred at (cx,cy) at angleDeg
-// Returns sin(deg) using a high-precision Taylor series approximation
+  Returns {x, y} on a circle of given radius centred at (cx,cy) at angleDeg
+  Returns sin(deg) using a high-precision Taylor series approximation
+*/
 fn _sin(deg: number) {
   let a = deg
   while a < 0 { a = a + 360 }
@@ -224,6 +232,7 @@ fn _slice_color(idx: number) {
 }
 
 export fn compile_pie_chart(data: array, chartTitle: string) {
+
   // Sum totals
   let total = 0
   for item in data { total = total + item["value"] }
@@ -289,6 +298,7 @@ export fn compile_pie_chart(data: array, chartTitle: string) {
     let col = colors[colIdx]
     
     let ly = 40 + li * 22
+
     // Circular color indicator
     html = html + "    <circle cx='" + str(legendX + 6) + "' cy='" + str(ly + 5) + "' r='6' fill='" + col + "' stroke='#0d0d12' stroke-width='1' />\n"
     html = html + "    <text x='" + str(legendX + 20) + "' y='" + str(ly + 9) + "' fill='#f0f0f5' font-size='9' font-family='monospace' font-weight='bold'>" + item["label"] + "</text>\n"
@@ -354,14 +364,16 @@ export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: stri
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Heatmap  (CSS grid, value → colour intensity)
-// ─────────────────────────────────────────────────────────────────────────────
-// rows: array<object> with keys "label" (row name) and "cells" (array<object>
-//   each having "col" and "value").
-// cols: array<string> — column header labels
-
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Heatmap  (CSS grid, value → colour intensity)
+  ─────────────────────────────────────────────────────────────────────────────
+  rows: array<object> with keys "label" (row name) and "cells" (array<object>
+  each having "col" and "value").
+  cols: array<string> — column header labels
+*/
 export fn compile_heatmap(rows: array, cols: array, chartTitle: string) {
+
   // Flatten all values to find global min/max
   let allMin = 999999999
   let allMax = -999999999
@@ -391,6 +403,7 @@ export fn compile_heatmap(rows: array, cols: array, chartTitle: string) {
     html = html + "    <div style='font-size:0.78rem; color:#88ff88; font-weight:bold; align-self:center; padding-right:6px;'>" + row["label"] + "</div>\n"
     for cell in row["cells"] {
       let ratio = (cell["value"] - allMin) / spread
+
       // Map ratio to green→yellow→red hex channel
       let r = 0
       let g = 255
@@ -417,11 +430,13 @@ export fn compile_heatmap(rows: array, cols: array, chartTitle: string) {
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Scatter Plot  (SVG circles, normalised to viewBox)
-// ─────────────────────────────────────────────────────────────────────────────
-// points: array<object> with keys "x", "y", and optional "label"
-// xLabel / yLabel: axis titles
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Scatter Plot  (SVG circles, normalised to viewBox)
+  ─────────────────────────────────────────────────────────────────────────────
+  points: array<object> with keys "x", "y", and optional "label"
+  xLabel / yLabel: axis titles
+*/
 
 export fn compile_scatter_plot(points: array, xLabel: string, yLabel: string, chartTitle: string) {
   let pad = 40
@@ -458,6 +473,7 @@ export fn compile_scatter_plot(points: array, xLabel: string, yLabel: string, ch
   let y1 = pad + h
   html = html + "    <line x1='" + str(x0) + "' y1='" + str(y0) + "' x2='" + str(x0) + "' y2='" + str(y1) + "' stroke='#333' stroke-width='1' />\n"
   html = html + "    <line x1='" + str(x0) + "' y1='" + str(y1) + "' x2='" + str(x1) + "' y2='" + str(y1) + "' stroke='#333' stroke-width='1' />\n"
+  
   // Axis labels
   html = html + "    <text x='" + str(x0 + w / 2) + "' y='" + str(svgH - 4) + "' text-anchor='middle' fill='#555' font-size='10'>" + xLabel + "</text>\n"
   html = html + "    <text x='10' y='" + str(y0 + h / 2) + "' text-anchor='middle' fill='#555' font-size='10' transform='rotate(-90 10 " + str(y0 + h / 2) + ")'>" + yLabel + "</text>\n"
@@ -476,11 +492,13 @@ export fn compile_scatter_plot(points: array, xLabel: string, yLabel: string, ch
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Radar / Spider Chart  (SVG polygon, N-axis)
-// ─────────────────────────────────────────────────────────────────────────────
-// axes: array<object> with keys "label" and "value" (0–100 scale expected)
-// maxVal: the scale ceiling (defaults to 100 if 0)
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Radar / Spider Chart  (SVG polygon, N-axis)
+  ─────────────────────────────────────────────────────────────────────────────
+  axes: array<object> with keys "label" and "value" (0–100 scale expected)
+  maxVal: the scale ceiling (defaults to 100 if 0)
+*/
 
 export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
   let scale = maxVal
@@ -518,6 +536,7 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
     let angleDeg = -90 + (si * 360) / n
     let sp = _polar(cx, cy, r, angleDeg)
     html = html + "    <line x1='" + str(cx) + "' y1='" + str(cy) + "' x2='" + str(sp["x"]) + "' y2='" + str(sp["y"]) + "' stroke='#333' stroke-width='1' />\n"
+    
     // Axis label
     let lp = _polar(cx, cy, r + 16, angleDeg)
     html = html + "    <text x='" + str(lp["x"]) + "' y='" + str(lp["y"]) + "' text-anchor='middle' dominant-baseline='middle' fill='#88ff88' font-size='9'>" + axis["label"] + "</text>\n"
@@ -554,13 +573,16 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Funnel Chart  (SVG trapezoid stacks, widest at top)
-// ─────────────────────────────────────────────────────────────────────────────
-// stages: array<object> with keys "label" and "value"
-// Values are used proportionally — the largest determines 100% width.
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Funnel Chart  (SVG trapezoid stacks, widest at top)
+  ─────────────────────────────────────────────────────────────────────────────
+  stages: array<object> with keys "label" and "value"
+  Values are used proportionally — the largest determines 100% width.
+*/
 
 export fn compile_funnel_chart(stages: array, chartTitle: string) {
+
   // Find max value to normalise widths
   let maxVal = 0
   for s in stages { if s["value"] > maxVal { maxVal = s["value"] } }
@@ -601,6 +623,7 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
     let nextHalfW = (svgW * 0.45) * nextRatio
 
     let col = _slice_color(colorIdx)
+
     // Trapezoid: top-left, top-right, bottom-right, bottom-left
     let tlx = midX - halfW
     let trx = midX + halfW
@@ -610,6 +633,7 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
     let by  = y + stageH
     let pts = str(tlx) + "," + str(ty) + " " + str(trx) + "," + str(ty) + " " + str(brx) + "," + str(by) + " " + str(blx) + "," + str(by)
     html = html + "    <polygon points='" + pts + "' fill='" + col + "' stroke='#000' stroke-width='1.5' />\n"
+    
     // Label
     html = html + "    <text x='" + str(midX) + "' y='" + str(ty + stageH / 2 + 5) + "' text-anchor='middle' fill='#000' font-size='11' font-weight='bold'>" + stage["label"] + " — " + str(stage["value"]) + "</text>\n"
     si = si + 1
@@ -620,10 +644,12 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Candlestick Chart (SVG OHLC wicks and bodies)
-// ─────────────────────────────────────────────────────────────────────────────
-// data: array<object> with keys "label", "open", "high", "low", "close"
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Candlestick Chart (SVG OHLC wicks and bodies)
+  ─────────────────────────────────────────────────────────────────────────────
+  data: array<object> with keys "label", "open", "high", "low", "close"
+*/
 export fn compile_candlestick_chart(data: array, chartTitle: string) {
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
@@ -631,6 +657,7 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
 
   let count = len(data)
   if count > 0 {
+    
     // Find min and max of ALL high/low/open/close values to scale properly
     let first = data[0]
     let maxVal = first["high"]
@@ -730,10 +757,12 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Treemap Chart (SVG slice-and-dice rectangular layout partitioning)
-// ─────────────────────────────────────────────────────────────────────────────
-// data: array<object> with keys "label" and "value"
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Treemap Chart (SVG slice-and-dice rectangular layout partitioning)
+  ─────────────────────────────────────────────────────────────────────────────
+  data: array<object> with keys "label" and "value"
+*/
 export fn compile_treemap_chart(data: array, chartTitle: string) {
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
@@ -751,6 +780,7 @@ export fn compile_treemap_chart(data: array, chartTitle: string) {
   let idx = 0
   let count = len(data)
   for item in data {
+
     // Calculate sum of remaining values
     let sum_rem = 0
     let k = idx
@@ -794,8 +824,10 @@ export fn compile_treemap_chart(data: array, chartTitle: string) {
         // Render label if the box is big enough
         if cw > 40 {
           if ch > 20 {
+            
             // Title label
             html = html + "      <text x='" + str(cx + 8) + "' y='" + str(cy + 16) + "' fill='#ffffff' font-size='9' font-weight='bold' font-family='monospace'>" + item["label"] + "</text>\n"
+            
             // Value label
             html = html + "      <text x='" + str(cx + 8) + "' y='" + str(cy + 28) + "' fill='" + col + "' font-size='8' font-family='monospace'>" + str(item["value"]) + "</text>\n"
           }
@@ -811,9 +843,11 @@ export fn compile_treemap_chart(data: array, chartTitle: string) {
   return html
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tool Registry
-// ─────────────────────────────────────────────────────────────────────────────
+/*
+  ─────────────────────────────────────────────────────────────────────────────
+  Tool Registry
+  ─────────────────────────────────────────────────────────────────────────────
+*/
 export fn visual_chart_tools() {
   let tool_refs = {}
 
