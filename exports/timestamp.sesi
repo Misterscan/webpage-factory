@@ -1,4 +1,4 @@
-import {format, now} from "std/time"
+allow "std/time" in with Time // active
 
 /*
   Convert the current date/time into a local readable format:
@@ -16,7 +16,7 @@ export fn getDate(dateStyle: string) {
     dateStyle = with_letters
   }
 
-  let timestamp = format(now(), {"locale": "en-US", "dateStyle": dateStyle})
+  let timestamp = Time.format(Time.now(), {"locale": "en-US", "dateStyle": dateStyle})
   return timestamp
 }
 
@@ -35,7 +35,7 @@ export fn localTime(timeStyle: string) {
     timeStyle = verbose
   }
 
-  let timestamp = format(now(), {"locale": "en-US", "timeStyle": timeStyle})
+  let timestamp = Time.format(Time.now(), {"locale": "en-US", "timeStyle": timeStyle})
   return timestamp
 }
 
@@ -43,8 +43,8 @@ export fn localTime(timeStyle: string) {
   Convert the current time into a universal readable format
     Note: It's currently preset to "short" timeStyle only for issues with date formatting appearing with other options.
 */
-export fn universalTime(timeStyle: string) {
-  let timestamp = format(now(), {"timeZone": "UTC", "timeStyle": "short"})
+export fn universalTime() {
+  let timestamp = Time.format(Time.now(), {"timeZone": "UTC", "timeStyle": "short"})
   return timestamp
 }
 

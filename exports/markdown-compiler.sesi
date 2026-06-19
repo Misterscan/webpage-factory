@@ -4,7 +4,7 @@
   Uses high-speed string segmentation logic instead of heavy regex engines.
 */
 
-import {generate_page} from "site-builder"
+allow "site-builder" in with Site
 
 // Pre-processes inline bold formatting (**bold**)
 export fn parse_bold(line: string) -> string {
@@ -367,7 +367,7 @@ export fn compile_markdown_file(mdPath: string, htmlPath: string, title: string)
   try {
     let mdContent = read_file(mdPath)
     let parsed_body = parse_markdown(mdContent)
-    let complete_html = generate_page(title, parsed_body)
+    let complete_html = Site.generate_page(title, parsed_body)
     write_file(htmlPath, complete_html)
     print "✓ Markdown compilation successfully completed!"
     return true
@@ -483,38 +483,28 @@ export fn task_list_type(line: string) -> string {
   return ""
 }
 
+fn _is_digit(ch) {
+  let digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+  for d in digits {
+    if d == ch { return true }
+  }
+  return false
+}
+
+fn _is_not_digit(ch) {
+  return !_is_digit(ch)
+}
+
 // Ordered list item detection — line starts with "N. "
 export fn is_ordered_item(line: string) -> string {
   let dotsegs = split(line, ". ")
   if len(dotsegs) < 2 { return "" }
   let prefix = dotsegs[0]
   let chars = split(prefix, "")
-  let allDigits = true
   if len(chars) == 0 { return "" }
-  for ch in chars {
-    if ch != "0" {
-      if ch != "1" {
-        if ch != "2" {
-          if ch != "3" {
-            if ch != "4" {
-              if ch != "5" {
-                if ch != "6" {
-                  if ch != "7" {
-                    if ch != "8" {
-                      if ch != "9" {
-                        allDigits = false
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if allDigits {
+  
+  let non_digits = filter(chars, _is_not_digit)
+  if len(non_digits) == 0 {
     return dotsegs[1]
   }
   return ""
@@ -527,38 +517,39 @@ export fn is_ordered_item(line: string) -> string {
   Converts a markdown pipe table into an HTML <table>.
   tableLines: array<string> — the raw lines collected while inTable == true.
 */
+
+fn _is_not_empty(cell) {
+  return len(cell) > 0
+}
+
+fn _make_th(cell) {
+  return "  <th>" + parse_inline_full(cell) + "</th>\n"
+}
+
+fn _make_td(cell) {
+  return "  <td>" + parse_inline_full(cell) + "</td>\n"
+}
+
+fn _render_row(rowLine) {
+  let validCells = filter(split(rowLine, "|"), _is_not_empty)
+  let tdElements = map(validCells, _make_td)
+  return "<tr>\n" + join(tdElements, "") + "</tr>\n"
+}
+
 export fn compile_table(tableLines: array) -> string {
   if len(tableLines) < 2 { return "" }
 
   let html = "<div class='md-table-wrap'>\n<table class='md-table'>\n"
 
   // Header row — first line
-  let headerLine = tableLines[0]
-  let headerCells = split(headerLine, "|")
-  html = html + "<thead>\n<tr>\n"
-  for cell in headerCells {
-    if len(cell) > 0 {
-      html = html + "  <th>" + parse_inline_full(cell) + "</th>\n"
-    }
-  }
-  html = html + "</tr>\n</thead>\n<tbody>\n"
+  let validHeaderCells = filter(split(tableLines[0], "|"), _is_not_empty)
+  let thElements = map(validHeaderCells, _make_th)
+  html = html + "<thead>\n<tr>\n" + join(thElements, "") + "</tr>\n</thead>\n<tbody>\n"
 
-  // Skip separator row (index 1 — contains dashes)
-  let rowIdx = 2
-  while rowIdx < len(tableLines) {
-    let rowLine = tableLines[rowIdx]
-    let rowCells = split(rowLine, "|")
-    html = html + "<tr>\n"
-    for cell in rowCells {
-      if len(cell) > 0 {
-        html = html + "  <td>" + parse_inline_full(cell) + "</td>\n"
-      }
-    }
-    html = html + "</tr>\n"
-    rowIdx = rowIdx + 1
-  }
-
-  html = html + "</tbody>\n</table>\n</div>\n"
+  // Skip separator row (index 1 — contains dashes) and map data rows
+  let rows = slice(tableLines, 2)
+  let rowHtml = join(map(rows, _render_row), "")
+  html = html + rowHtml + "</tbody>\n</table>\n</div>\n"
   return html
 }
 
@@ -570,41 +561,43 @@ export fn compile_table(tableLines: array) -> string {
   <footer> block. Call after the main body is assembled.
 */
 
-export fn collect_footnotes(lines: array) -> string {
-  let notes = []
-  for line in lines {
-    let segs = split(line, "[^")
-    if len(segs) >= 2 {
-      let inner = split(segs[1], "]:")
-      if len(inner) >= 2 {
-        let key = inner[0]
-        let text = inner[1]
+fn _extract_footnote(line) {
+  let segs = split(line, "[^")
+  if len(segs) >= 2 {
+    let inner = split(segs[1], "]:")
+    if len(inner) >= 2 {
+      let key = inner[0]
+      let text = inner[1]
 
-        // Trim leading space
+      // Trim leading space using slice
+      if len(text) > 0 {
         let textChars = split(text, "")
-        if len(textChars) > 0 {
-          if textChars[0] == " " {
-            let trimmed = ""
-            let ti = 1
-            while ti < len(textChars) {
-              trimmed = trimmed + textChars[ti]
-              ti = ti + 1
-            }
-            text = trimmed
-          }
+        if textChars[0] == " " {
+          text = slice(text, 1)
         }
-        push(notes, {"key": key, "text": text})
       }
+      return {"key": key, "text": text}
     }
   }
+  return null
+}
+
+fn _is_not_null(x) {
+  return x != null
+}
+
+fn _render_note(note) {
+  return "  <li id='fn-" + note["key"] + "'>" + parse_inline_full(note["text"]) + "</li>\n"
+}
+
+export fn collect_footnotes(lines: array) -> string {
+  let parsedNotes = map(lines, _extract_footnote)
+  let notes = filter(parsedNotes, _is_not_null)
+  
   if len(notes) == 0 { return "" }
 
-  let html = "<footer class='md-footnotes'>\n"
-  html = html + "<ol class='footnote-list'>\n"
-  for note in notes {
-    html = html + "  <li id='fn-" + note["key"] + "'>" + parse_inline_full(note["text"]) + "</li>\n"
-  }
-  html = html + "</ol>\n</footer>\n"
+  let listItems = map(notes, _render_note)
+  let html = "<footer class='md-footnotes'>\n<ol class='footnote-list'>\n" + join(listItems, "") + "</ol>\n</footer>\n"
   return html
 }
 
@@ -689,7 +682,7 @@ export fn parse_markdown_full(mdText) {
         }
       }
       if isFnDef {
-        let _skip = 0
+        continue
       } else if is_hr(line) {
         if inTable {
           html = html + compile_table(tableLines)
@@ -878,7 +871,7 @@ export fn compile_markdown_file_full(mdPath: string, htmlPath: string, title: st
   try {
     let mdContent = read_file(mdPath)
     let parsed_body = parse_markdown_full(mdContent)
-    let complete_html = generate_page(title, parsed_body)
+    let complete_html = Site.generate_page(title, parsed_body)
     write_file(htmlPath, complete_html)
     print "Compiled:" htmlPath
     return true
@@ -888,23 +881,26 @@ export fn compile_markdown_file_full(mdPath: string, htmlPath: string, title: st
   }
 }
 
+fn _is_md_file(file) {
+  let parts = split(file, ".")
+  return parts[len(parts) - 1] == "md"
+}
+
 // Batch-compiles all .md files in a directory into HTML files in outputDir
 export fn compile_markdown_dir(mdDir: string, outputDir: string) {
   make_dir(outputDir)
   let files = list_dir(mdDir)
+  let mdFiles = filter(files, _is_md_file)
+
   let count = 0
-  for file in files {
-    let parts = split(file, ".")
-    let ext = parts[len(parts) - 1]
-    if ext == "md" {
-      let baseParts = split(file, ".md")
-      let base = baseParts[0]
-      let inPath  = mdDir + "/" + file
-      let outPath = outputDir + "/" + base + ".html"
-      let ok = compile_markdown_file_full(inPath, outPath, base)
-      if ok {
-        count = count + 1
-      }
+  for file in mdFiles {
+    let baseParts = split(file, ".md")
+    let base = baseParts[0]
+    let inPath  = mdDir + "/" + file
+    let outPath = outputDir + "/" + base + ".html"
+    let ok = compile_markdown_file_full(inPath, outPath, base)
+    if ok {
+      count = count + 1
     }
   }
   print "compile_markdown_dir: compiled" str(count) "file(s) from" mdDir

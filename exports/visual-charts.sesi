@@ -4,7 +4,16 @@
   Perfect for high-density, low-latency static dashboard rendering.
 */
 
-export fn compile_bar_chart(data, chartTitle) {
+allow "std/draw" in with Draw // active
+
+fn _render_svg(w, h, viewBox, style) {
+  let rawSvg = Draw.render(w, h)
+  let parts = split(rawSvg, "xmlns=\"http://www.w3.org/2000/svg\">")
+  let header = "<svg viewBox='" + viewBox + "' width='100%' style='" + style + "' xmlns='http://www.w3.org/2000/svg'>"
+  return header + parts[1]
+}
+
+export fn compile_bar(data, chartTitle) {
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
   html = html + "  <div class='bar-chart-container' style='display: flex; flex-direction: column; gap: 12px; margin-top: 15px;'>\n"
@@ -55,15 +64,13 @@ export fn compile_sparkline(values, chartTitle) {
     let leftMargin = 45
     let topMargin = 15
     
-    html = html + "    <svg viewBox='0 0 400 180' width='100%' style='overflow: visible;'>\n"
+    Draw.clear()
     
-    // SVG Defs for gradients and filters
-    html = html + "      <defs>\n"
-    html = html + "        <linearGradient id='grad-sparkline' x1='0' y1='0' x2='0' y2='1'>\n"
-    html = html + "          <stop offset='0%' stop-color='#00ff66' stop-opacity='0.4'/>\n"
-    html = html + "          <stop offset='100%' stop-color='#00ff66' stop-opacity='0.0'/>\n"
-    html = html + "        </linearGradient>\n"
-    html = html + "      </defs>\n"
+    // Gradient definitions:
+    Draw.gradient("linear", "grad-sparkline", [
+      {"offset": "0%", "color": "#00ff66", "opacity": 0.4},
+      {"offset": "100%", "color": "#00ff66", "opacity": 0.0}
+    ], {"x1": 0, "y1": 0, "x2": 0, "y2": 1})
     
     // Draw Grid Lines (Horizontal)
     let grid_lines = 4
@@ -72,12 +79,12 @@ export fn compile_sparkline(values, chartTitle) {
       let gy = topMargin + g * (height / grid_lines)
 
       // Grid line
-      html = html + "      <line x1='" + str(leftMargin) + "' y1='" + str(gy) + "' x2='" + str(leftMargin + width) + "' y2='" + str(gy) + "' stroke='#1f1f2e' stroke-width='1' stroke-dasharray='3,3' />\n"
+      Draw.line(leftMargin, gy, leftMargin + width, gy, "#1f1f2e", {"stroke-width": "1", "stroke-dasharray": "3,3"})
       
       // Y label
       let y_val = maxVal - g * (spread / grid_lines)
       let y_val_str = str(y_val)
-      html = html + "      <text x='" + str(leftMargin - 8) + "' y='" + str(gy + 3) + "' fill='#8a8a9e' font-size='8' text-anchor='end' font-family='monospace'>" + y_val_str + "</text>\n"
+      Draw.text(leftMargin - 8, gy + 3, y_val_str, 8, "#8a8a9e", {"text-anchor": "end", "font-family": "monospace"})
       g = g + 1
     }
     
@@ -100,10 +107,10 @@ export fn compile_sparkline(values, chartTitle) {
     area_path = area_path + " L " + str(leftMargin + width) + " " + str(topMargin + height) + " Z"
     
     // Draw Area Fill
-    html = html + "      <path d='" + area_path + "' fill='url(#grad-sparkline)' />\n"
+    Draw.path(area_path, "url(#grad-sparkline)")
     
-    // Draw Line
-    html = html + "      <polyline fill='none' stroke='#00ff66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' points='" + points + "' />\n"
+    // Draw Line (as polyline raw)
+    Draw.raw("<polyline fill='none' stroke='#00ff66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' points='" + points + "' />")
     
     // Draw Dots and point labels
     let idx_dot = 0
@@ -112,24 +119,25 @@ export fn compile_sparkline(values, chartTitle) {
       let y = topMargin + height - (((v - minVal) / spread) * height)
       
       // Dot shadow / glow circle
-      html = html + "      <circle cx='" + str(x) + "' cy='" + str(y) + "' r='6' fill='#00ff66' fill-opacity='0.25' />\n"
+      Draw.circle(x, y, 6, "#00ff66", {"fill-opacity": 0.25})
       
       // Main dot
-      html = html + "      <circle cx='" + str(x) + "' cy='" + str(y) + "' r='3' fill='#00ff66' stroke='#ffffff' stroke-width='1' />\n"
+      Draw.circle(x, y, 3, "#00ff66", {"stroke": "#ffffff", "stroke-width": 1})
       
       // Label above dot if not too many points
       if count <= 15 {
-        html = html + "      <text x='" + str(x) + "' y='" + str(y - 8) + "' fill='#ffffff' font-size='8' text-anchor='middle' font-weight='bold' font-family='monospace'>" + str(v) + "</text>\n"
+        Draw.text(x, y - 8, str(v), 8, "#ffffff", {"text-anchor": "middle", "font-weight": "bold", "font-family": "monospace"})
       }
       
       // X label (T1, T2, ...)
       let x_label = "T" + str(idx_dot + 1)
-      html = html + "      <text x='" + str(x) + "' y='" + str(topMargin + height + 16) + "' fill='#8a8a9e' font-size='8' text-anchor='middle' font-family='monospace'>" + x_label + "</text>\n"
+      Draw.text(x, topMargin + height + 16, x_label, 8, "#8a8a9e", {"text-anchor": "middle", "font-family": "monospace"})
       
       idx_dot = idx_dot + 1
     }
     
-    html = html + "    </svg>\n"
+    let svg = _render_svg(400, 180, "0 0 400 180", "overflow: visible;")
+    html = html + svg + "\n"
   } else {
     html = html + "    <p style='color: #62627a;'>No telemetry data present</p>\n"
   }
@@ -231,7 +239,7 @@ fn _slice_color(idx: number) {
   return palette[i]
 }
 
-export fn compile_pie_chart(data: array, chartTitle: string) {
+export fn compile_pie(data: array, chartTitle: string) {
 
   // Sum totals
   let total = 0
@@ -244,9 +252,9 @@ export fn compile_pie_chart(data: array, chartTitle: string) {
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 360 240' width='100%' style='margin-top:12px; filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.35));'>\n"
 
-  // Custom modern palette
+  Draw.clear()
+
   let colors = ["#00ff66", "#00ffff", "#ffb700", "#ff3366", "#a64dff", "#0088ff", "#ff66cc", "#99ff33"]
 
   let startDeg = -90
@@ -268,8 +276,7 @@ export fn compile_pie_chart(data: array, chartTitle: string) {
     d = d + " A " + str(r) + " " + str(r) + " 0 " + str(largeArc) + " 1 " + str(p2["x"]) + " " + str(p2["y"])
     d = d + " Z"
     
-    // Render slice with clean borders
-    html = html + "    <path d='" + d + "' fill='" + col + "' stroke='#0d0d12' stroke-width='2.5' stroke-linejoin='round' />\n"
+    Draw.path(d, col, {"stroke": "#0d0d12", "stroke-width": "2.5", "stroke-linejoin": "round"})
     
     // Label midpoint
     let midDeg = startDeg + sliceDeg / 2
@@ -282,7 +289,7 @@ export fn compile_pie_chart(data: array, chartTitle: string) {
       let parts = split(pct_str, ".")
       let pct_clean = parts[0] + "%"
       
-      html = html + "    <text x='" + str(lp["x"]) + "' y='" + str(lp["y"]) + "' text-anchor='middle' dominant-baseline='middle' fill='#0d0d12' font-size='9' font-weight='bold' font-family='monospace'>" + pct_clean + "</text>\n"
+      Draw.text(lp["x"], lp["y"], pct_clean, 9, "#0d0d12", {"text-anchor": "middle", "dominant-baseline": "middle", "font-weight": "bold", "font-family": "monospace"})
     }
     
     startDeg = endDeg
@@ -299,17 +306,17 @@ export fn compile_pie_chart(data: array, chartTitle: string) {
     
     let ly = 40 + li * 22
 
-    // Circular color indicator
-    html = html + "    <circle cx='" + str(legendX + 6) + "' cy='" + str(ly + 5) + "' r='6' fill='" + col + "' stroke='#0d0d12' stroke-width='1' />\n"
-    html = html + "    <text x='" + str(legendX + 20) + "' y='" + str(ly + 9) + "' fill='#f0f0f5' font-size='9' font-family='monospace' font-weight='bold'>" + item["label"] + "</text>\n"
+    Draw.circle(legendX + 6, ly + 5, 6, col, {"stroke": "#0d0d12", "stroke-width": "1"})
+    Draw.text(legendX + 20, ly + 9, item["label"], 9, "#f0f0f5", {"font-family": "monospace", "font-weight": "bold"})
     li = li + 1
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(360, 240, "0 0 360 240", "margin-top:12px; filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.35));")
+  html = html + svg + "\n</div>"
   return html
 }
 
-export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: string) {
+export fn compile_donut(data: array, chartTitle: string, centerLabel: string) {
   let total = 0
   for item in data { total = total + item["value"] }
   if total == 0 { total = 1 }
@@ -321,7 +328,8 @@ export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: stri
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 340 240' width='100%' style='margin-top:12px;'>\n"
+
+  Draw.clear()
 
   let startDeg = -90
   let colorIdx = 0
@@ -340,14 +348,15 @@ export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: stri
     d = d + " L " + str(p1i["x"]) + " " + str(p1i["y"])
     d = d + " A " + str(rInner) + " " + str(rInner) + " 0 " + str(largeArc) + " 0 " + str(p2i["x"]) + " " + str(p2i["y"])
     d = d + " Z"
-    html = html + "    <path d='" + d + "' fill='" + col + "' stroke='#000' stroke-width='2' />\n"
+    
+    Draw.path(d, col, {"stroke": "#000", "stroke-width": "2"})
     startDeg = endDeg
     colorIdx = colorIdx + 1
   }
 
   // Centre label
-  html = html + "    <text x='" + str(cx) + "' y='" + str(cy - 6) + "' text-anchor='middle' fill='#fff' font-size='13' font-weight='bold'>" + centerLabel + "</text>\n"
-  html = html + "    <text x='" + str(cx) + "' y='" + str(cy + 10) + "' text-anchor='middle' fill='#88ff88' font-size='10'>" + str(total) + " total</text>\n"
+  Draw.text(cx, cy - 6, centerLabel, 13, "#fff", {"text-anchor": "middle", "font-weight": "bold"})
+  Draw.text(cx, cy + 10, str(total) + " total", 10, "#88ff88", {"text-anchor": "middle"})
 
   // Legend
   let li = 0
@@ -355,12 +364,13 @@ export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: stri
   for item in data {
     let col = _slice_color(li)
     let ly = 30 + li * 22
-    html = html + "    <rect x='" + str(legendX) + "' y='" + str(ly) + "' width='12' height='12' fill='" + col + "' />\n"
-    html = html + "    <text x='" + str(legendX + 16) + "' y='" + str(ly + 10) + "' fill='#88ff88' font-size='10'>" + item["label"] + "</text>\n"
+    Draw.rect(legendX, ly, 12, 12, col)
+    Draw.text(legendX + 16, ly + 10, item["label"], 10, "#88ff88")
     li = li + 1
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(340, 240, "0 0 340 240", "margin-top:12px;")
+  html = html + svg + "\n</div>"
   return html
 }
 
@@ -373,7 +383,6 @@ export fn compile_donut_chart(data: array, chartTitle: string, centerLabel: stri
   cols: array<string> — column header labels
 */
 export fn compile_heatmap(rows: array, cols: array, chartTitle: string) {
-
   // Flatten all values to find global min/max
   let allMin = 999999999
   let allMax = -999999999
@@ -385,8 +394,6 @@ export fn compile_heatmap(rows: array, cols: array, chartTitle: string) {
   }
   let spread = allMax - allMin
   if spread == 0 { spread = 1 }
-
-  let colCount = len(cols) + 1
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
@@ -464,31 +471,35 @@ export fn compile_scatter_plot(points: array, xLabel: string, yLabel: string, ch
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 " + str(svgW) + " " + str(svgH) + "' width='100%' style='margin-top:12px;'>\n"
+
+  Draw.clear()
 
   // Axes
   let x0 = pad
   let y0 = pad
   let x1 = pad + w
   let y1 = pad + h
-  html = html + "    <line x1='" + str(x0) + "' y1='" + str(y0) + "' x2='" + str(x0) + "' y2='" + str(y1) + "' stroke='#333' stroke-width='1' />\n"
-  html = html + "    <line x1='" + str(x0) + "' y1='" + str(y1) + "' x2='" + str(x1) + "' y2='" + str(y1) + "' stroke='#333' stroke-width='1' />\n"
+  Draw.line(x0, y0, x0, y1, "#333", {"stroke-width": "1"})
+  Draw.line(x0, y1, x1, y1, "#333", {"stroke-width": "1"})
   
   // Axis labels
-  html = html + "    <text x='" + str(x0 + w / 2) + "' y='" + str(svgH - 4) + "' text-anchor='middle' fill='#555' font-size='10'>" + xLabel + "</text>\n"
-  html = html + "    <text x='10' y='" + str(y0 + h / 2) + "' text-anchor='middle' fill='#555' font-size='10' transform='rotate(-90 10 " + str(y0 + h / 2) + ")'>" + yLabel + "</text>\n"
+  Draw.text(x0 + w / 2, svgH - 4, xLabel, 10, "#555", {"text-anchor": "middle"})
+  
+  let rotAttr = "rotate(-90 10 " + str(y0 + h / 2) + ")"
+  Draw.text(10, y0 + h / 2, yLabel, 10, "#555", {"text-anchor": "middle", "transform": rotAttr})
 
   // Plot circles
   for pt in points {
     let px = x0 + ((pt["x"] - xMin) / xSpread) * w
     let py = y1 - ((pt["y"] - yMin) / ySpread) * h
-    html = html + "    <circle cx='" + str(px) + "' cy='" + str(py) + "' r='5' fill='#00ff66' stroke='#000' stroke-width='1' opacity='0.85' />\n"
+    Draw.circle(px, py, 5, "#00ff66", {"stroke": "#000", "stroke-width": "1", "opacity": "0.85"})
     if pt["label"] != null {
-      html = html + "    <text x='" + str(px + 7) + "' y='" + str(py + 4) + "' fill='#88ff88' font-size='9'>" + pt["label"] + "</text>\n"
+      Draw.text(px + 7, py + 4, pt["label"], 9, "#88ff88")
     }
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(svgW, svgH, "0 0 " + str(svgW) + " " + str(svgH), "margin-top:12px;")
+  html = html + svg + "\n</div>"
   return html
 }
 
@@ -500,7 +511,7 @@ export fn compile_scatter_plot(points: array, xLabel: string, yLabel: string, ch
   maxVal: the scale ceiling (defaults to 100 if 0)
 */
 
-export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
+export fn compile_radar(axes: array, chartTitle: string, maxVal: number) {
   let scale = maxVal
   if scale == 0 { scale = 100 }
 
@@ -512,7 +523,8 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 300 260' width='100%' style='margin-top:12px;'>\n"
+
+  Draw.clear()
 
   // Draw web rings (3 rings at 33%, 66%, 100%)
   let ringPct = 0
@@ -526,7 +538,7 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
       webPts = webPts + str(wp["x"]) + "," + str(wp["y"]) + " "
       wi = wi + 1
     }
-    html = html + "    <polygon points='" + webPts + "' fill='none' stroke='#222' stroke-width='1' />\n"
+    Draw.polygon(webPts, "none", {"stroke": "#222", "stroke-width": "1"})
     ringPct = ringPct + 1
   }
 
@@ -535,11 +547,11 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
   for axis in axes {
     let angleDeg = -90 + (si * 360) / n
     let sp = _polar(cx, cy, r, angleDeg)
-    html = html + "    <line x1='" + str(cx) + "' y1='" + str(cy) + "' x2='" + str(sp["x"]) + "' y2='" + str(sp["y"]) + "' stroke='#333' stroke-width='1' />\n"
+    Draw.line(cx, cy, sp["x"], sp["y"], "#333", {"stroke-width": "1"})
     
     // Axis label
     let lp = _polar(cx, cy, r + 16, angleDeg)
-    html = html + "    <text x='" + str(lp["x"]) + "' y='" + str(lp["y"]) + "' text-anchor='middle' dominant-baseline='middle' fill='#88ff88' font-size='9'>" + axis["label"] + "</text>\n"
+    Draw.text(lp["x"], lp["y"], axis["label"], 9, "#88ff88", {"text-anchor": "middle", "dominant-baseline": "middle"})
     si = si + 1
   }
 
@@ -555,7 +567,7 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
     dataPts = dataPts + str(dp["x"]) + "," + str(dp["y"]) + " "
     di = di + 1
   }
-  html = html + "    <polygon points='" + dataPts + "' fill='rgba(0,255,102,0.15)' stroke='#00ff66' stroke-width='2' />\n"
+  Draw.polygon(dataPts, "rgba(0,255,102,0.15)", {"stroke": "#00ff66", "stroke-width": "2"})
 
   // Data dots
   let ddi = 0
@@ -565,11 +577,12 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
     if ratio < 0 { ratio = 0 }
     let angleDeg = -90 + (ddi * 360) / n
     let dp = _polar(cx, cy, r * ratio, angleDeg)
-    html = html + "    <circle cx='" + str(dp["x"]) + "' cy='" + str(dp["y"]) + "' r='4' fill='#ff003c' stroke='#fff' stroke-width='1' />\n"
+    Draw.circle(dp["x"], dp["y"], 4, "#ff003c", {"stroke": "#fff", "stroke-width": "1"})
     ddi = ddi + 1
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(300, 260, "0 0 300 260", "margin-top:12px;")
+  html = html + svg + "\n</div>"
   return html
 }
 
@@ -581,7 +594,7 @@ export fn compile_radar_chart(axes: array, chartTitle: string, maxVal: number) {
   Values are used proportionally — the largest determines 100% width.
 */
 
-export fn compile_funnel_chart(stages: array, chartTitle: string) {
+export fn compile_funnel(stages: array, chartTitle: string) {
 
   // Find max value to normalise widths
   let maxVal = 0
@@ -597,7 +610,8 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
 
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 " + str(svgW) + " " + str(svgH) + "' width='100%' style='margin-top:12px;'>\n"
+
+  Draw.clear()
 
   let si = 0
   let colorIdx = 0
@@ -632,15 +646,17 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
     let ty  = y
     let by  = y + stageH
     let pts = str(tlx) + "," + str(ty) + " " + str(trx) + "," + str(ty) + " " + str(brx) + "," + str(by) + " " + str(blx) + "," + str(by)
-    html = html + "    <polygon points='" + pts + "' fill='" + col + "' stroke='#000' stroke-width='1.5' />\n"
+    Draw.polygon(pts, col, {"stroke": "#000", "stroke-width": "1.5"})
     
     // Label
-    html = html + "    <text x='" + str(midX) + "' y='" + str(ty + stageH / 2 + 5) + "' text-anchor='middle' fill='#000' font-size='11' font-weight='bold'>" + stage["label"] + " — " + str(stage["value"]) + "</text>\n"
+    let labelText = stage["label"] + " — " + str(stage["value"])
+    Draw.text(midX, ty + stageH / 2 + 5, labelText, 11, "#000", {"text-anchor": "middle", "font-weight": "bold"})
     si = si + 1
     colorIdx = colorIdx + 1
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(svgW, svgH, "0 0 " + str(svgW) + " " + str(svgH), "margin-top:12px;")
+  html = html + svg + "\n</div>"
   return html
 }
 
@@ -650,7 +666,7 @@ export fn compile_funnel_chart(stages: array, chartTitle: string) {
   ─────────────────────────────────────────────────────────────────────────────
   data: array<object> with keys "label", "open", "high", "low", "close"
 */
-export fn compile_candlestick_chart(data: array, chartTitle: string) {
+export fn compile_candlestick(data: array, chartTitle: string) {
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
   html = html + "  <div class='candlestick-container' style='background: #0d0d12; border: 2px solid #2a2a3a; padding: 16px; margin-top: 15px; border-radius: 4px;'>\n"
@@ -680,17 +696,17 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
     let leftMargin = 45
     let topMargin = 15
 
-    html = html + "    <svg viewBox='0 0 400 180' width='100%' style='overflow: visible;'>\n"
+    Draw.clear()
 
     // Horizontal grid lines
     let grid_lines = 4
     let g = 0
     while g <= grid_lines {
       let gy = topMargin + g * (height / grid_lines)
-      html = html + "      <line x1='" + str(leftMargin) + "' y1='" + str(gy) + "' x2='" + str(leftMargin + width) + "' y2='" + str(gy) + "' stroke='#1f1f2e' stroke-width='1' stroke-dasharray='3,3' />\n"
+      Draw.line(leftMargin, gy, leftMargin + width, gy, "#1f1f2e", {"stroke-width": "1", "stroke-dasharray": "3,3"})
       let y_val = maxVal - g * (spread / grid_lines)
       let y_val_str = str(y_val)
-      html = html + "      <text x='" + str(leftMargin - 8) + "' y='" + str(gy + 3) + "' fill='#8a8a9e' font-size='8' text-anchor='end' font-family='monospace'>" + y_val_str + "</text>\n"
+      Draw.text(leftMargin - 8, gy + 3, y_val_str, 8, "#8a8a9e", {"text-anchor": "end", "font-family": "monospace"})
       g = g + 1
     }
 
@@ -728,7 +744,7 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
       }
 
       // Draw wick (line from low to high)
-      html = html + "      <line x1='" + str(cx_pos) + "' y1='" + str(y_low) + "' x2='" + str(cx_pos) + "' y2='" + str(y_high) + "' stroke='" + color + "' stroke-width='1.5' />\n"
+      Draw.line(cx_pos, y_low, cx_pos, y_high, color, {"stroke-width": "1.5"})
 
       // Draw body (rect from open to close)
       let rectY = y_open
@@ -740,15 +756,16 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
       if rectH < 2 { rectH = 2 }
 
       let rectX = cx_pos - candleW / 2
-      html = html + "      <rect x='" + str(rectX) + "' y='" + str(rectY) + "' width='" + str(candleW) + "' height='" + str(rectH) + "' fill='" + color + "' stroke='#0d0d12' stroke-width='1' />\n"
+      Draw.rect(rectX, rectY, candleW, rectH, color, {"stroke": "#0d0d12", "stroke-width": "1"})
 
       // X label
-      html = html + "      <text x='" + str(cx_pos) + "' y='" + str(topMargin + height + 16) + "' fill='#8a8a9e' font-size='8' text-anchor='middle' font-family='monospace'>" + item["label"] + "</text>\n"
+      Draw.text(cx_pos, topMargin + height + 16, item["label"], 8, "#8a8a9e", {"text-anchor": "middle", "font-family": "monospace"})
 
       idx = idx + 1
     }
 
-    html = html + "    </svg>\n"
+    let svg = _render_svg(400, 180, "0 0 400 180", "overflow: visible;")
+    html = html + svg + "\n"
   } else {
     html = html + "    <p style='color: #62627a;'>No intervals present</p>\n"
   }
@@ -763,16 +780,17 @@ export fn compile_candlestick_chart(data: array, chartTitle: string) {
   ─────────────────────────────────────────────────────────────────────────────
   data: array<object> with keys "label" and "value"
 */
-export fn compile_treemap_chart(data: array, chartTitle: string) {
+export fn compile_treemap(data: array, chartTitle: string) {
   let html = "<div class='brutalist-chart-card'>\n"
   html = html + "  <h3 class='chart-card-title'>" + chartTitle + "</h3>\n"
-  html = html + "  <svg viewBox='0 0 360 200' width='100%' style='margin-top:12px; border: 2px solid #2a2a3a; background: #0d0d12;'>\n"
 
   // Canvas bounds: x=0, y=0, w=360, h=200
   let rx = 0
   let ry = 0
   let rw = 360
   let rh = 200
+
+  Draw.clear()
 
   // Palette colors
   let colors = ["#00ff66", "#00ffff", "#ffb700", "#ff3366", "#a64dff", "#0088ff", "#ff66cc", "#99ff33"]
@@ -818,28 +836,25 @@ export fn compile_treemap_chart(data: array, chartTitle: string) {
     // Ensure we don't draw empty or negative boxes
     if cw > 2 {
       if ch > 2 {
-        html = html + "    <g>\n"
-        html = html + "      <rect x='" + str(cx) + "' y='" + str(cy) + "' width='" + str(cw) + "' height='" + str(ch) + "' fill='" + col + "' fill-opacity='0.15' stroke='" + col + "' stroke-width='1.5' />\n"
+        Draw.rect(cx, cy, cw, ch, col, {"fill-opacity": "0.15", "stroke": col, "stroke-width": "1.5"})
         
         // Render label if the box is big enough
         if cw > 40 {
           if ch > 20 {
-            
             // Title label
-            html = html + "      <text x='" + str(cx + 8) + "' y='" + str(cy + 16) + "' fill='#ffffff' font-size='9' font-weight='bold' font-family='monospace'>" + item["label"] + "</text>\n"
-            
+            Draw.text(cx + 8, cy + 16, item["label"], 9, "#ffffff", {"font-weight": "bold", "font-family": "monospace"})
             // Value label
-            html = html + "      <text x='" + str(cx + 8) + "' y='" + str(cy + 28) + "' fill='" + col + "' font-size='8' font-family='monospace'>" + str(item["value"]) + "</text>\n"
+            Draw.text(cx + 8, cy + 28, str(item["value"]), 8, col, {"font-family": "monospace"})
           }
         }
-        html = html + "    </g>\n"
       }
     }
 
     idx = idx + 1
   }
 
-  html = html + "  </svg>\n</div>"
+  let svg = _render_svg(360, 200, "0 0 360 200", "margin-top:12px; border: 2px solid #2a2a3a; background: #0d0d12;")
+  html = html + svg + "\n</div>"
   return html
 }
 
@@ -856,17 +871,17 @@ export fn visual_chart_tools() {
     tool_refs[name] = desc
   }
 
-  register_tool("compile_bar_chart",    compile_bar_chart,    "Render a brutalist horizontal bar chart from an array of {label, value} items")
-  register_tool("compile_sparkline",    compile_sparkline,    "Render an SVG sparkline from an array of numeric values")
-  register_tool("compile_gauge_indicator", compile_gauge_indicator, "Render a colour-coded linear gauge bar with dynamic warning thresholds")
-  register_tool("compile_pie_chart",    compile_pie_chart,    "Render an SVG pie chart with percentage labels and legend")
-  register_tool("compile_donut_chart",  compile_donut_chart,  "Render an SVG donut chart with a centre label and legend")
-  register_tool("compile_heatmap",      compile_heatmap,      "Render a CSS grid heatmap with green-to-red intensity colouring")
-  register_tool("compile_scatter_plot", compile_scatter_plot, "Render an SVG scatter plot with labelled axes and optional point labels")
-  register_tool("compile_radar_chart",  compile_radar_chart,  "Render an SVG radar / spider chart from N-axis {label, value} data")
-  register_tool("compile_funnel_chart", compile_funnel_chart, "Render an SVG funnel chart with tapered trapezoid stages")
-  register_tool("compile_candlestick_chart", compile_candlestick_chart, "Render a brutalist SVG candlestick chart from OHLC data points")
-  register_tool("compile_treemap_chart", compile_treemap_chart, "Render a detailed SVG treemap chart using slice-and-dice partitioning")
+  register_tool("compile_bar",                compile_bar,                "Render a brutalist horizontal bar chart from an array of {label, value} items")
+  register_tool("compile_sparkline",          compile_sparkline,          "Render an SVG sparkline from an array of numeric values")
+  register_tool("compile_gauge_indicator",    compile_gauge_indicator,    "Render a colour-coded linear gauge bar with dynamic warning thresholds")
+  register_tool("compile_pie",                compile_pie,                "Render an SVG pie chart with percentage labels and legend")
+  register_tool("compile_donut",              compile_donut,              "Render an SVG donut chart with a centre label and legend")
+  register_tool("compile_heatmap",            compile_heatmap,            "Render a CSS grid heatmap with green-to-red intensity colouring")
+  register_tool("compile_scatter_plot",       compile_scatter_plot,       "Render an SVG scatter plot with labelled axes and optional point labels")
+  register_tool("compile_radar",              compile_radar,              "Render an SVG radar / spider chart from N-axis {label, value} data")
+  register_tool("compile_funnel",             compile_funnel,             "Render an SVG funnel chart with tapered trapezoid stages")
+  register_tool("compile_candlestick",        compile_candlestick,        "Render a brutalist SVG candlestick chart from OHLC data points")
+  register_tool("compile_treemap",            compile_treemap,            "Render a detailed SVG treemap chart using slice-and-dice partitioning")
 
   let _registry = list_tools()
   print "📦 visual-charts tool registry loaded —" str(len(_registry)) "tools available"

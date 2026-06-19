@@ -1,5 +1,7 @@
 // main.sesi - Starter Sesi script
-import {compile_bento_grid, compile_accordion} from "exports/site-builder"
+allow "exports/site-builder" in with {
+  compile_bento_grid, compile_accordion
+}
 
 // In Sesi, we use prompt blocks for string templating
 prompt welcome {"Welcome to your self-contained Sesi project!"}

@@ -1,6 +1,6 @@
 {
   "name": "webpage-factory",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "A Sesi project for building webpages.",
   "main": "node_modules/@misterscan/sesi/dist/index.js",
   "bin": {
@@ -21,7 +21,7 @@
     "server": "sesi server.sesi -l"
   },
   "dependencies": {
-    "@misterscan/sesi": "1.5.3"
+    "@misterscan/sesi": "1.5.6"
   },
   "keywords": [
     "sesi",
@@ -31,5 +31,10 @@
     "generator"
   ],
   "author": "Misterscan",
-  "homepage": "https://github.com/Misterscan/webpage-factory"
+  "homepage": "https://github.com/Misterscan/webpage-factory",
+  "allowScripts": {
+    "@google/genai@2.8.0": true,
+    "fsevents@2.3.2": true,
+    "protobufjs@7.6.4": true
+  }
 }

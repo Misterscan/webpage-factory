@@ -156,7 +156,7 @@ export fn generate_smart_page(topic: string, outputDir: string) {
 export fn get_website_stats(dir: string) {
   let files = list_dir(dir)
   let count = len(files)
-  print "Generated " + str(count) + " files in " dir
+  print "Generated" str(count) "files in" dir
   return count
 }
 
@@ -272,7 +272,7 @@ export fn optimize_page_load(dir: string, compression: number) {
     let segments = split(file, ".")
     let ext = segments[len(segments) - 1]
     if ext == "png" {
-      print "Optimizing image:" file
+      print "Optimizing image:" file "with compression level:" str(compression)
     }
   }
   return true
@@ -412,8 +412,9 @@ export fn save_sitemap_xml(path: string, topics: array<string>, baseUrl: string)
 }
 
 export fn autoFetch(topic: string, sourceUrl: string) {
+  print "Auto-fetching topic:" topic "from" sourceUrl
   let content = web_get(sourceUrl)
-  let structured = structured_output({title: string, body: string})(model("gemini-3.1-flash-lite") {"Extract title and content from: " content})
+  let structured = structured_output({title: string, body: string})(model("gemini-3.1-flash-lite") {"Extract title and content about " topic " from: " content})
   return structured
 }
 

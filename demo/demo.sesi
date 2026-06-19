@@ -1,43 +1,54 @@
-import {init_db, insert_record, find_records_multi, sort_records_by, list_collections, count_records, backup_db} from "exports/db-helper"
-import {parse_csv, export_to_csv, export_to_json, export_to_excel_xml, export_to_word_xml, compute_average, compute_sum, compute_max, compute_min, compute_median, compute_mode, compute_std_dev, group_by, validate_records, validate_numeric_field} from "exports/data-analyzer"
-import {compile_bar_chart, compile_sparkline, compile_gauge_indicator, compile_pie_chart, compile_donut_chart, compile_candlestick_chart, compile_treemap_chart} from "exports/visual-charts"
-import {generate_page, compile_nav_bar, compile_hero_banner, compile_keybind_bar, compile_accordion, compile_breadcrumb, compile_search_bar, compile_progress_bar, generate_seo_metadata} from "exports/site-builder"
+allow "exports/db-helper" in with DB
+allow "exports/data-analyzer" in with Data
+allow "exports/visual-charts" in with Chart
+allow "exports/site-builder" in with Site
 
 print "=== Webpage Factory Demo Build Started ==="
 
 // ── 1. Stateful Database Integration ──────────────────────────────────────────
 let db = "demo/dashboard_db.json"
-init_db(db)
+DB.init_db(db)
 
 // Add metrics data logs to database if empty
-let entries_count = count_records(db, "logs")
+let entries_count = DB.count_records(db, "logs")
 if entries_count == 0 {
   print "Database logs empty. Populating telemetry metrics..."
-  insert_record(db, "logs", {"metric": "latency", "val": 120, "env": "production"})
-  insert_record(db, "logs", {"metric": "latency", "val": 350, "env": "staging"})
-  insert_record(db, "logs", {"metric": "latency", "val": 85, "env": "production"})
-  insert_record(db, "logs", {"metric": "cpu", "val": 45, "env": "production"})
-  insert_record(db, "logs", {"metric": "cpu", "val": 88, "env": "staging"})
-  insert_record(db, "logs", {"metric": "cpu", "val": 12, "env": "development"})
-  insert_record(db, "logs", {"metric": "memory", "val": 60, "env": "production"})
-  insert_record(db, "logs", {"metric": "memory", "val": 75, "env": "staging"})
-  insert_record(db, "logs", {"metric": "memory", "val": 40, "env": "development"})
+  DB.insert_record(db, "logs", {"metric": "latency", "val": 120, "env": "production"})
+  DB.insert_record(db, "logs", {"metric": "latency", "val": 350, "env": "staging"})
+  DB.insert_record(db, "logs", {"metric": "latency", "val": 85, "env": "production"})
+  DB.insert_record(db, "logs", {"metric": "cpu", "val": 45, "env": "production"})
+  DB.insert_record(db, "logs", {"metric": "cpu", "val": 88, "env": "staging"})
+  DB.insert_record(db, "logs", {"metric": "cpu", "val": 12, "env": "development"})
+  DB.insert_record(db, "logs", {"metric": "memory", "val": 60, "env": "production"})
+  DB.insert_record(db, "logs", {"metric": "memory", "val": 75, "env": "staging"})
+  DB.insert_record(db, "logs", {"metric": "memory", "val": 40, "env": "development"})
 }
 
 // Query all logs and sort by numerical field "val"
-let all_logs = find_records_multi(db, "logs", {})
-let sorted_logs = sort_records_by(db, "logs", "val")
-let cols = list_collections(db)
+let all_logs = DB.find_records_multi(db, "logs", {})
+let sorted_logs = DB.sort_records_by(db, "logs", "val")
+let cols = DB.list_collections(db)
 
 // Backup the database
-let db_backup = backup_db(db)
+let db_backup = DB.backup_db(db)
 
 /*
   ── 2. Data Analytics Integration ─────────────────────────────────────────────
   Raw performance CSV data (response times in ms, error rates in %)
 */
-let raw_csv = "metric,value,env\nlatency,90,production\nlatency,320,staging\nlatency,110,production\nlatency,600,production\nlatency,80,development\nmemory,65,production\nmemory,82,staging\nmemory,45,development\ncpu,30,production\ncpu,92,staging\ncpu,15,development"
-let parsed_metrics = parse_csv(raw_csv)
+prompt raw_csv {"metric,value,env
+latency,90,production
+latency,320,staging
+latency,110,production
+latency,600,production
+latency,80,development
+memory,65,production
+memory,82,staging
+memory,45,development
+cpu,30,production
+cpu,92,staging
+cpu,15,development"}
+let parsed_metrics = Data.parse_csv(raw_csv)
 print "CSV Performance Records Parsed:" len(parsed_metrics)
 
 /*
@@ -50,13 +61,13 @@ for m in parsed_metrics {
     push(latency_records, m)
   }
 }
-let avg_latency = compute_average(latency_records, "value")
-let sum_latency = compute_sum(latency_records, "value")
-let max_latency = compute_max(latency_records, "value")
-let min_latency = compute_min(latency_records, "value")
-let med_latency = compute_median(latency_records, "value")
-let mode_latency = compute_mode(latency_records, "value")
-let sd_latency = compute_std_dev(latency_records, "value")
+let avg_latency = Data.compute_average(latency_records, "value")
+let sum_latency = Data.compute_sum(latency_records, "value")
+let max_latency = Data.compute_max(latency_records, "value")
+let min_latency = Data.compute_min(latency_records, "value")
+let med_latency = Data.compute_median(latency_records, "value")
+let mode_latency = Data.compute_mode(latency_records, "value")
+let sd_latency = Data.compute_std_dev(latency_records, "value")
 print "Latency Analytics Compiled:"
 print "  Average:" avg_latency "ms"
 print "  Sum:" sum_latency "ms"
@@ -67,21 +78,21 @@ print "  Mode:" mode_latency "ms"
 print "  Std Dev:" sd_latency
 
 // Run Group By env
-let grouped_by_env = group_by(parsed_metrics, "env")
+let grouped_by_env = Data.group_by(parsed_metrics, "env")
 let env_keys = keys(grouped_by_env)
 
 // Perform schema and data validations
-let schema_violations = validate_records(parsed_metrics, ["metric", "value", "env"])
-let bad_numeric_indices = validate_numeric_field(parsed_metrics, "value")
+let schema_violations = Data.validate_records(parsed_metrics, ["metric", "value", "env"])
+let bad_numeric_indices = Data.validate_numeric_field(parsed_metrics, "value")
 print "Telemetry Validation Results:"
 print "  Schema violations count:" len(schema_violations)
 print "  Bad numeric records count:" len(bad_numeric_indices)
 
 // Export data into multiple serialization formats
-let csv_export = export_to_csv(parsed_metrics, ["metric", "value", "env"])
-let json_export = export_to_json(parsed_metrics)
-let excel_export = export_to_excel_xml(parsed_metrics, ["metric", "value", "env"])
-let word_export = export_to_word_xml(parsed_metrics, ["metric", "value", "env"])
+let csv_export = Data.export_to_csv(parsed_metrics, ["metric", "value", "env"])
+let json_export = Data.export_to_json(parsed_metrics)
+let excel_export = Data.export_to_excel_xml(parsed_metrics, ["metric", "value", "env"])
+let word_export = Data.export_to_word_xml(parsed_metrics, ["metric", "value", "env"])
 
 // Write output export files to disk
 try {
@@ -102,18 +113,18 @@ for k in env_keys {
   let count = len(grouped_by_env[k])
   push(env_counts, {"label": k, "value": count * 20}) // scaled to show nicely
 }
-let bar_chart_html = compile_bar_chart(env_counts, "Environments Density Index (scaled)")
+let bar_chart_html = Chart.compile_bar(env_counts, "Environments Density Index (scaled)")
 
 // Sparkline (Upgraded detailed Line Chart) of Latency values
 let sparkline_values = []
 for m in latency_records {
   push(sparkline_values, m["value"] - 0)
 }
-let sparkline_html = compile_sparkline(sparkline_values, "Response Latency Trend (ms)")
+let sparkline_html = Chart.compile_sparkline(sparkline_values, "Response Latency Trend (ms)")
 
 // Gauge Indicator showing CPU utilization
 let current_cpu_val = 67
-let gauge_html = compile_gauge_indicator(current_cpu_val, 0, 100, "Global Node Load Factor")
+let gauge_html = Chart.compile_gauge_indicator(current_cpu_val, 0, 100, "Global Node Load Factor")
 
 // Pie Chart showing Env Allocation distribution
 let allocation_data = [
@@ -121,7 +132,7 @@ let allocation_data = [
   {"label": "Staging", "value": 30},
   {"label": "Development", "value": 15}
 ]
-let pie_chart_html = compile_pie_chart(allocation_data, "Core Clusters Allocation (%)")
+let pie_chart_html = Chart.compile_pie(allocation_data, "Core Clusters Allocation (%)")
 
 // Candlestick Chart (Telemetry Interval Ranges)
 let candlestick_data = [
@@ -131,7 +142,7 @@ let candlestick_data = [
   {"label": "12:00", "open": 280, "high": 310, "low": 90, "close": 105},
   {"label": "13:00", "open": 105, "high": 180, "low": 70, "close": 85}
 ]
-let candlestick_html = compile_candlestick_chart(candlestick_data, "Server Latency OHLC Spreads (ms)")
+let candlestick_html = Chart.compile_candlestick(candlestick_data, "Server Latency OHLC Spreads (ms)")
 
 // Treemap Chart (Storage usage distribution)
 let treemap_data = [
@@ -141,7 +152,7 @@ let treemap_data = [
   {"label": "Static Styles", "value": 120},
   {"label": "System Backups", "value": 80}
 ]
-let treemap_html = compile_treemap_chart(treemap_data, "Disk Storage Footprint (MB)")
+let treemap_html = Chart.compile_treemap(treemap_data, "Disk Storage Footprint (MB)")
 
 // ── 4. Dashboard Assembly (Using site-builder) ───────────────────────────────
 let nav_links = [
@@ -151,14 +162,14 @@ let nav_links = [
   {"label": "Excel Sheet", "url": "telemetry.xls"},
   {"label": "Word Document", "url": "telemetry.doc"}
 ]
-let nav_bar = compile_nav_bar("WEBPAGE FACTORY DASHBOARD DEMO", nav_links)
+let nav_bar = Site.compile_nav_bar("WEBPAGE FACTORY DASHBOARD DEMO", nav_links)
 let crumbs = [
   {"label": "Systems", "url": "#"},
   {"label": "Telemetry", "url": "#"},
   {"label": "Dashboard", "url": "#"}
 ]
-let breadcrumb_html = compile_breadcrumb(crumbs)
-let search_bar_html = compile_search_bar("bar-row", "Filter by node/environment...")
+let breadcrumb_html = Site.compile_breadcrumb(crumbs)
+let search_bar_html = Site.compile_search_bar("bar-row", "Filter by node/environment...")
 
 // Construct main stats overview via Bento Grid items
 let bento_items = [
@@ -229,17 +240,17 @@ let accordion_items = [
     "content": "This dashboard compiles system telemetry data dynamically. It calls local analytical libraries for calculation and executes with zero client-side dependencies. Style tokens use vanilla brutalist layout models."
   }
 ]
-let accordion_html = compile_accordion(accordion_items)
+let accordion_html = Site.compile_accordion(accordion_items)
 
 // Progress bars for resource metrics
-let cpu_progress = compile_progress_bar("Core Processors (CPU) load", current_cpu_val)
-let mem_progress = compile_progress_bar("Cluster Memory Allocation", 74)
+let cpu_progress = Site.compile_progress_bar("Core Processors (CPU) load", current_cpu_val)
+let mem_progress = Site.compile_progress_bar("Cluster Memory Allocation", 74)
 let keybind_hints = [
   {"keys": "CTRL + S", "action": "Refresh Metrics"},
   {"keys": "CTRL + B", "action": "Initiate Database Backup"},
   {"keys": "ALT + X", "action": "Export to SpreadsheetML"}
 ]
-let keybind_html = compile_keybind_bar(keybind_hints)
+let keybind_html = Site.compile_keybind_bar(keybind_hints)
 
 // Assemble final page content
 let main_content = ""
@@ -271,7 +282,7 @@ main_content = main_content + accordion_html
 main_content = main_content + keybind_html
 
 // Render full index.html page
-let final_html = generate_page("Webpage Factory Demo Dashboard", main_content)
+let final_html = Site.generate_page("Webpage Factory Demo Dashboard", main_content)
 try {
   write_file("demo/index.html", final_html)
 } catch (err) {
