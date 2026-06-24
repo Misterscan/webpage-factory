@@ -27,9 +27,14 @@ Install dependencies:
 npm install
 ```
 
+To run the Sesi interpreter locally:
+```bash
+npm run local <filename>
+```
+
 To execute your main Sesi program:
 ```bash
-npm start
+npm run start
 ```
 
 To compile the dashboard page demo:
@@ -40,7 +45,7 @@ npm run demo
 To run inline Sesi code evaluations:
 
 ```bash
-npm run eval "print 'Hello from eval'"
+npm run eval "let txt = 'Hello from eval'; print txt"
 ```
 
 To run the linter on your whole workspace:
@@ -58,10 +63,10 @@ npm run lint <filename>
 Get tips & tricks from the built-in Sesi Co-Pilot:
 
 ```bash
-npm run support
+npm run support topic>
 ```
 ```bash
-npm run support <topic>
+npm run support <filename> <topic> 
 ```
 
 To encrypt a file:
@@ -82,7 +87,7 @@ npm run decrypt <filename>
 
 ### `site-builder` — HTML Component Compiler
 
-Import with: `import {fn_name} from "site-builder"`
+Import with: `allow "exports/site-builder" in with { fn_name } or Site`
 
 | Function | Description |
 | :--- | :--- |
@@ -113,7 +118,7 @@ Import with: `import {fn_name} from "site-builder"`
 
 ### `markdown-compiler` — Markdown → HTML Parser
 
-Import with: `import {fn_name} from "markdown-compiler"`
+Import with: `allow "exports/markdown-compiler" in with { fn_name } or MD`
 
 | Function | Description |
 | :--- | :--- |
@@ -131,7 +136,7 @@ Import with: `import {fn_name} from "markdown-compiler"`
 
 ### `visual-charts` — SVG/HTML Chart Engine
 
-Import with: `import {fn_name} from "visual-charts"`
+Import with: `allow "exports/visual-charts" in with { fn_name } or Charts`
 
 All chart functions return raw HTML strings. No client-side JavaScript required.
 
@@ -153,7 +158,7 @@ All chart functions return raw HTML strings. No client-side JavaScript required.
 
 ### `data-analyzer` — CSV & Collection Processing
 
-Import with: `import {fn_name} from "data-analyzer"`
+Import with: `allow "exports/data-analyzer" in with { fn_name } or Data`
 
 | Function | Description |
 | :--- | :--- |
@@ -179,7 +184,7 @@ Import with: `import {fn_name} from "data-analyzer"`
 
 ### `db-helper` — Flat-File JSON Database
 
-Import with: `import {fn_name} from "db-helper"`
+Import with: `allow "exports/db-helper" in with { fn_name } or DB`
 
 | Function | Description |
 | :--- | :--- |

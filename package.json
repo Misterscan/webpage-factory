@@ -4,24 +4,25 @@
   "description": "A Sesi project for building webpages.",
   "main": "node_modules/@misterscan/sesi/dist/index.js",
   "bin": {
-    "sesi": "bin/sesi.js"
+    "sesi": "node_modules/@misterscan/sesi/bin/sesi.js"
   },
   "license": "MIT",
   "private": true,
   "scripts": {
-    "sesi": "sesi",
-    "start": "sesi -l main.sesi",
-    "demo": "sesi -l demo/demo.sesi",
-    "eval": "sesi -e",
-    "help": "sesi -h",
-    "support": "sesi chatbot/sesi_db_chatbot.sesi",
-    "lint": "sesi bin/lint.sesi",
-    "encrypt": "sesi -enc",
-    "decrypt": "sesi -dec",
-    "server": "sesi server.sesi -l"
+    "sesi": "node node_modules/@misterscan/sesi/bin/sesi.js",
+    "local": "node node_modules/@misterscan/sesi/bin/sesi.js -l",
+    "start": "node node_modules/@misterscan/sesi/bin/sesi.js -l main.sesi",
+    "demo": "node node_modules/@misterscan/sesi/bin/sesi.js -l demo/demo.sesi",
+    "eval": "node node_modules/@misterscan/sesi/bin/sesi.js -e",
+    "help": "node node_modules/@misterscan/sesi/bin/sesi.js -h",
+    "support": "node node_modules/@misterscan/sesi/bin/sesi.js chatbot/sesi_db_chatbot.sesi",
+    "lint": "node node_modules/@misterscan/sesi/bin/sesi.js bin/lint.sesi",
+    "encrypt": "node node_modules/@misterscan/sesi/bin/sesi.js -enc",
+    "decrypt": "node node_modules/@misterscan/sesi/bin/sesi.js -dec",
+    "server": "node node_modules/@misterscan/sesi/bin/sesi.js server.sesi -l"
   },
   "dependencies": {
-    "@misterscan/sesi": "1.5.6"
+    "@misterscan/sesi": "1.5.8"
   },
   "keywords": [
     "sesi",
@@ -33,7 +34,7 @@
   "author": "Misterscan",
   "homepage": "https://github.com/Misterscan/webpage-factory",
   "allowScripts": {
-    "@google/genai@2.8.0": true,
+    "@google/genai@2.10.0": true,
     "fsevents@2.3.2": true,
     "protobufjs@7.6.4": true
   }
